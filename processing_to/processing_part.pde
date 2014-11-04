@@ -25,6 +25,8 @@ float dangerZone = 25;
 
 int inZone;    //0 for emotion  1 for danger    2 for good    3 for outer
 
+
+
 //emotion point
 float ePointX = rectCenterX;
 float ePointY = rectCenterY;
@@ -92,11 +94,8 @@ void setup() {
   //================================================================= SERIAL PORT STUFF
   // Open the port you are using at the rate you want:
   myPort = new Serial(this, "/dev/tty.usbmodem1a1311", 115200);
-  myPort.clear();
-  // Throw out the first reading, in case we started reading 
-  // in the middle of a string from the sender.
+  //myPort.clear();
   myString = myPort.readStringUntil(lf);
-  myString = null;  
   //TO SEND
   //================================================================= SERIAL PORT STUFF END
   size(appSize, appSize);
@@ -116,81 +115,18 @@ void setup() {
 //=================================================================//
 
 void draw() {
- 
 
-  rectMode(CENTER);
-  noStroke();
-
-  //--------------------------------------------------------------- zones
-  //------------------------------------------------- Outer
-  fill(150, 150, 255);
-  rect(rectCenterX, rectCenterY, outerZone, outerZone);
-
-  //------------------------------------------------- Good
-  fill(150, 255, 150);
-  rect(rectCenterX, rectCenterY, rectSize+goodZone*2, rectSize+goodZone*2);
-
-  //------------------------------------------------- DANGER
-  fill(255, 0, 0);
-  rect(rectCenterX, rectCenterY, rectSize+dangerZone*2, rectSize+dangerZone*2);
-
-  //--------------------------------------------------------------- emotion box
-  rectMode(CENTER);
-  fill(255);
-  stroke(0);
-  rect(rectCenterX, rectCenterY, rectSize, rectSize);
-
-  //--------------------------------------------------------------- text around the rectangle
-  fill(0);
-  text ( "Happy", rectCenterX-20, rectCenterY-180); 
-  text ( "Sad", rectCenterX-5, rectCenterY+180); 
-  text ( "Excited", rectCenterX-210, rectCenterY-10); 
-  text ( "Calm", rectCenterX+180, rectCenterY-10);   
-
-
-  //--------------------------------------------------------------- emotion grid
-  for (int i = 0; i < 10; i++) {
-    rectMode(CENTER);
-    stroke(0);
-    noFill();
-    rect(rectCenterX, rectCenterY, (rectSize/10)*i, (rectSize/10)*i);
-  }
-
-  //--------------------------------------------------------------- people
-  noStroke();
-  fill(0);
-  movePerson();
-
-  //--------------------------------------------------------------- time
-  int time = millis();
-  int s = time/1000;
-
-  text (s, 180, 30);
+  backgroundDisplay();  //make the background boxes
+  emotionGridDisplay(); //make the emotion box & grid
   
-  int timeTest = 5;
+  timeTesting();        //time display
   
-  if (s >= timeTest && s < (timeTest + 120) ){
-    int nt = (s - timeTest)/2;
-    float rnt = round(nt);
-    float rntd = rnt/10;
-    
-    text (rntd, 180, 50);
-  }
+  movePerson();         //people movement logic
+  peopleDisplay();      //people display
 
-  //--------------------------------------------------------------- emotion dot
-  //draw dot
-  fill(50, 100, 50);
-  noStroke();
-  ellipse(posX, posY, 10, 10);
-  //buffer position visual
-  stroke(0,150,150);
-  strokeWeight(2);
-  line(rectCenterX - bufferE, rectCenterY - bufferH, rectCenterX + bufferC, rectCenterY -bufferH);    //happy line
-  line(rectCenterX + bufferC, rectCenterY - bufferH, rectCenterX + bufferC, rectCenterY + bufferS);   //calm line
-  line(rectCenterX - bufferE, rectCenterY + bufferS, rectCenterX + bufferC, rectCenterY + bufferS);   //sad line
-  line(rectCenterX - bufferE, rectCenterY - bufferH, rectCenterX - bufferE, rectCenterY + bufferS);   //excited line
-  strokeWeight(1);
-  emotionDot();
+  emotionDot();         //emotion point logic
+  emotionDisplay();     //emotion point display
+  //bufferDisplay();    //emotion buffer display
 
 }
 
@@ -202,25 +138,17 @@ void serialEvent(Serial myPort) {
   myString = myPort.readStringUntil(lf);
   if (myString != null) {
     myString = trim(myString);
-    
     int[] distances = int(split(myString, " "));
-
-    
     for (int i = 0 ; i < arrayLength ; i++){
       movement[i] = distances[i];
-
     }    
-          //println(movement);
+     // println(distances);
   }
-
-  
 }
 
 //=================================================================//
-//======================== Basic Functions ========================//
+//============================ EMOTION ============================//
 //=================================================================//
-
-//-------------------------------------------------------------------------------- Emotion ---//
 
 void emotionDot () {
   //reset number of people in zones
@@ -300,8 +228,9 @@ void emotionDot () {
   }
 }
 
-//-------------------------------------------------------------------------------- move people ---//
-
+//=================================================================//
+//============================= PEOPLE ============================//
+//=================================================================//
 void movePerson() {
 
   rectMode(CENTER);
@@ -339,15 +268,14 @@ void movePerson() {
       if(aZone[i] == 1){
         fill(0);
         myPort.write('1');
-        println('1');
         //println('danger');
       }
       if(aZone[i] == 2){fill(125);}
       if(aZone[i] == 3){fill(255);}
       
-      println(aZone);
+      //println(aZone);
       
-    rect(ax[i], ay[i], 20, 20);
+    //
   }
 }
 
@@ -417,14 +345,111 @@ void checkZone(int i ) {
   if(south == 400) {personZone[2] = 0;}
   if(west == 400) {personZone[3] = 0;}
 
+
+  
+  
+
 }
-//-----------------------------------------------------------------------------------//
 
 
+//=================================================================//
+//============================ DISPLAY ============================//
+//=================================================================//
 
+//-------------------------------------------------------------------------------- DISPLAY BACKGROUND
+void backgroundDisplay (){
 
+  noStroke();
+  //boolean determines if a zone is occupied by ANYONE
+  boolean trigger3 = false;
+  boolean trigger2 = false;
+  boolean trigger1 = false;
+  for(int i = 0 ; i < personZone.length ; i++) {
+    if(personZone[i] == 3){     trigger3 = true;     }
+    if(personZone[i] == 2){     trigger2 = true;     }
+    if(personZone[i] == 1){     trigger1 = true;     }
+  }
 
+  if(trigger3 == true){  fill(150, 150, 255);  }else{  fill(255);  }
+  rect(rectCenterX, rectCenterY, outerZone, outerZone);
+  
+  if(trigger2 == true){  fill(150, 255, 150);  }else{  fill(255);  }
+  rect(rectCenterX, rectCenterY, rectSize+goodZone*2, rectSize+goodZone*2);
+  
+  if(trigger1 == true){  fill(255, 0, 0);  }else{  fill(255);  }
+  rect(rectCenterX, rectCenterY, rectSize+dangerZone*2, rectSize+dangerZone*2);
 
+  // text around the rectangle
+  fill(0);
+  text ( "Happy", rectCenterX-20, rectCenterY-180); 
+  text ( "Sad", rectCenterX-5, rectCenterY+180); 
+  text ( "Excited", rectCenterX-210, rectCenterY-10); 
+  text ( "Calm", rectCenterX+180, rectCenterY-10);   
+}
+
+//-------------------------------------------------------------------------------- DISPLAY EMOTION GRID
+void emotionGridDisplay () {
+  fill(255);
+  stroke(0);
+  rect(rectCenterX, rectCenterY, rectSize, rectSize);
+
+  for (int i = 0; i < 10; i++) {
+    rectMode(CENTER);
+    stroke(0);
+    noFill();
+    rect(rectCenterX, rectCenterY, (rectSize/10)*i, (rectSize/10)*i);
+  }  
+}
+
+//-------------------------------------------------------------------------------- DISPLAY EMOTION DOT AND BUFFER
+void emotionDisplay () {
+  //Emotion dot
+  fill(50, 100, 50);
+  ellipse(posX, posY, 10, 10);
+}
+
+void bufferDisplay() {
+  stroke(0,150,150);
+  strokeWeight(2);
+  line(rectCenterX - bufferE, rectCenterY - bufferH, rectCenterX + bufferC, rectCenterY -bufferH);    //happy line
+  line(rectCenterX + bufferC, rectCenterY - bufferH, rectCenterX + bufferC, rectCenterY + bufferS);   //calm line
+  line(rectCenterX - bufferE, rectCenterY + bufferS, rectCenterX + bufferC, rectCenterY + bufferS);   //sad line
+  line(rectCenterX - bufferE, rectCenterY - bufferH, rectCenterX - bufferE, rectCenterY + bufferS);   //excited line
+  strokeWeight(1);
+}
+
+//-------------------------------------------------------------------------------- DISPLAY PEOPLE
+void peopleDisplay() {
+  noStroke();
+  for(int i = 0 ; i < arrayLength ; i++){
+    //dont display a person if it is not within a zone
+    if(personZone[i] != 0){
+      rect(ax[i], ay[i], 20, 20);
+    }
+  }
+}
+
+//=================================================================//
+//============================== TIME =============================//
+//=================================================================//
+
+void timeTesting() {
+  fill(0);
+  int time = millis();
+  int s = time/1000;
+
+  text (s, 180, 30);
+  
+  int timeTest = 5;
+  
+  if (s >= timeTest && s < (timeTest + 120) ){
+    int nt = (s - timeTest)/2;
+    float rnt = round(nt);
+    float rntd = rnt/10;
+    
+    text (rntd, 180, 50);
+  }
+}
 
 
 
