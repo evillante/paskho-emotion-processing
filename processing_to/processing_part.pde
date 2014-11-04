@@ -4,11 +4,11 @@ import processing.serial.*;
 int lf = 10;    // Linefeed in ASCII
 String myString = null;
 Serial myPort;  // The serial port
-
-
-
 //serial port stuff END
-//-------------------------------------------------------------------------------- global variables ---// 
+
+int arduinoMaxDist = 300;
+
+//-------------------------------------------------------------------------------- global variables
 int appSize = 800;
 int halfApp = appSize/2;
 
@@ -21,31 +21,19 @@ float rectHalf = rectSize/2;
 //zones
 float outerZone = appSize;
 float goodZone = 150;
-float dangerZone = 25;
-
-int inZone;    //0 for emotion  1 for danger    2 for good    3 for outer
-
-
-
-//emotion point
-float ePointX = rectCenterX;
-float ePointY = rectCenterY;
-float boxWidth =20;
+float dangerZone = 15;
 
 //in the boxes
 boolean inBox = false;
 boolean inClear = false;
-boolean peopleAt = false;
 
 //array of people coordinates
 int arrayLength = 4;
 int [] ax = new int[arrayLength];
 int [] ay = new int[arrayLength];
-boolean [] drag = new boolean[arrayLength];
 int [] aZone = new int[arrayLength];
 int [] personZone = new int[arrayLength];
 
-int slot = 0;
 int numberOfPeople = 0;
 
 
@@ -86,6 +74,21 @@ float north;
 float south;
 float east;
 float west;
+
+//time
+int time;
+int s;
+int periodLength = 5;
+int remover = -periodLength;
+int current = s;
+
+//most used zone every 'x' seconds
+boolean timeRunOnce = true;
+int periodBuffer = 30;
+int zone1Counter = 0;
+int zone2Counter = 0;
+int zone3Counter = 0;
+
 //=================================================================//
 //============================== SETUP ============================//
 //=================================================================// 
@@ -105,7 +108,6 @@ void setup() {
   for (int i = 0; i < arrayLength; i++) {
     ax [i] = 0;
     ay [i] = 0;
-    drag [i] = false;
     aZone[i] = 0;
   }
 }
@@ -117,77 +119,44 @@ void setup() {
 void draw() {
 
   backgroundDisplay();  //make the background boxes
+  textDisplay();
   emotionGridDisplay(); //make the emotion box & grid
   
-  timeTesting();        //time display
+  timeCount();          //time logic
+  timeDisplay();        //display time counters
   
   movePerson();         //people movement logic
   peopleDisplay();      //people display
 
   emotionDot();         //emotion point logic
   emotionDisplay();     //emotion point display
-  //bufferDisplay();    //emotion buffer display
+  //bufferDisplay();      //emotion buffer display
 
+
+  mostusedZone();
 }
 
-//=================================================================//
-//===================== SERIAL PORT FUNCTION ======================//
-//=================================================================//
-
-void serialEvent(Serial myPort) {
-  myString = myPort.readStringUntil(lf);
-  if (myString != null) {
-    myString = trim(myString);
-    int[] distances = int(split(myString, " "));
-    for (int i = 0 ; i < arrayLength ; i++){
-      movement[i] = distances[i];
-    }    
-     // println(distances);
-  }
-}
 
 //=================================================================//
 //============================ EMOTION ============================//
 //=================================================================//
 
 void emotionDot () {
-  //reset number of people in zones
-  inZone1 = 0;  inZone2 = 0;  inZone3 = 0;
-  
-  for(int i = 0 ; i < arrayLength ; i++){
-    checkZone(i);
-    
-    //count number of people in Zones
-    if(aZone[i] == 1) {inZone1++;}
-    if(aZone[i] == 2) {inZone2++;}
-    if(aZone[i] == 3) {inZone3++;}
-    
+
+    peopleInZones();
+
     //-----------------------------------------------------movement logic
     //if more people in good than outer
-    if(inZone2 > inZone3) {
-      moveX +=0.2; moveY-=0.2;
-    }
-    //more people in outer than good
-    if(inZone3 > inZone2) {
-      moveX +=0.2; moveY +=0.2;
-    }
+    if(inZone1 > 0){
+      moveX -= 0.5;
+      moveY -= 0.5;
+     } else {
+      moveX += 0.5;
+      moveY += 0.5;
+     }
     
-    if( (inZone3 == inZone2) && (inZone3 == 0) && (inZone2 == 0) ) {
-      if (moveX < 0 ){moveX+= 0.2;}
-      if (moveX > 0 ){moveX-= 0.2;}
-      if (moveY < 0 ){moveY+= 0.2;}
-      if (moveY > 0 ){moveY-= 0.2;}
-      moveX += 0; moveY += 0;
-    }
-    
-    if(aZone[i] == 1){
-      moveX -=1; moveY +=1;
-    }
-    
-  }
-  
-  //print(inZone1 + " " + inZone2 + " " + inZone3);
-  //println();
+
+
 
   //limit emotion point to buffer
   if(rectCenterX + moveX >= rectCenterX + bufferC) {moveX = bufferC;}
@@ -228,24 +197,26 @@ void emotionDot () {
   }
 }
 
+    //=================================================================//
+    //===================== EMOtiON SUB FUNCTIONS =====================//
+    //=================================================================//
+
+
+
+
+
 //=================================================================//
 //============================= PEOPLE ============================//
 //=================================================================//
 void movePerson() {
-
   rectMode(CENTER);
     //println(movement);
     //println(" ");
-    north = map(movement[0], 0, 200, 0, halfApp);
-    east = map(movement[1], 0, 200, 0, halfApp);
-    south = map(movement[2], 0, 200, 0, halfApp);   
-    west = map(movement[3], 0, 200, 0, halfApp);  
-    
-    if (north == 0){north = halfApp;}
-    if (east == 0){east = halfApp;}
-    if (south == 0){south = halfApp;}
-    if (west == 0){west = halfApp;}
-    
+    north = map(movement[0], 0, arduinoMaxDist, 0, halfApp);
+    east = map(movement[1], 0, arduinoMaxDist, 0, halfApp);
+    south = map(movement[2], 0, arduinoMaxDist, 0, halfApp);   
+    west = map(movement[3], 0, arduinoMaxDist, 0, halfApp);  
+
     //north values
     ay[0] = int(halfApp - north);
     ax[0] = halfApp;
@@ -258,99 +229,73 @@ void movePerson() {
     //west values
     ax[3] = int(halfApp - west);
     ay[3] = halfApp;       
-    
-    //println(movement);
-
-
-  for (int i = 0; i < arrayLength; i++) {
-      checkZone(i);
-      aZone[i] = personZone[i];
-      if(aZone[i] == 1){
-        fill(0);
-        myPort.write('1');
-        //println('danger');
-      }
-      if(aZone[i] == 2){fill(125);}
-      if(aZone[i] == 3){fill(255);}
-      
-      //println(aZone);
-      
-    //
-  }
 }
 
 
-
-//-------------------------------------------------------------------------------- people counter ---//
-
-void countPeople() {
-
-  for (int i = 1; i <= arrayLength; i++) {
-    if (ax[i-1] != 0) {
-      numberOfPeople = i;
+    //=================================================================//
+    //====================== PEOPLE SUB FUNCTIONS =====================//
+    //=================================================================//
+    
+    //-------------------------------------------------------------------------------- Check what zone people are in
+    void checkZone(int i ) {
+          //within bounds of app
+      if((  ax[i] > 0 && ax[i] < appSize  )      &&      (  ay[i] > 0 && ay[i] < appSize  )) {personZone[i] = 3;}
+          //if within good zone
+      if((  ax[i] > (rectCenterX - rectHalf - goodZone)  )  &&  (  ax[i] < (rectCenterX + rectHalf + goodZone)  )      &&      (  ay[i] > (rectCenterY - rectHalf - goodZone)  )  &&  (  ay[i] < (rectCenterY + rectHalf + goodZone)  )) {personZone[i] = 2;} 
+          //if within danger zone
+      if((  ax[i] > (rectCenterX - rectHalf - dangerZone)  ) &&  (  ax[i] < (rectCenterX + rectHalf + dangerZone)  )       &&      (  ay[i] > (rectCenterY - rectHalf - dangerZone)  ) &&  (  ay[i] < (rectCenterY + rectHalf + dangerZone)  )) {personZone[i] = 1;} 
+        
+      //set zone 0 to be no detection by sensor   
+      if(north == 0) {personZone[0] = 0;}  if(east == 0) {personZone[1] = 0;}  if(south == 0) {personZone[2] = 0;}  if(west == 0) {personZone[3] = 0;}
     }
-  }
-  //print("number of people " + numberOfPeople);
-  //println(" ");
-}
-
-
-
-//-------------------------------------------------------------------------------- inBox ---//
-
-//check if in emotion container
-void inBox () {
-  if (( (mouseX < rectCenterX-rectHalf-10) || (mouseX > rectCenterX+rectHalf+10) ) || ( (mouseY < rectCenterX-rectHalf-10) || (mouseY > rectCenterX+rectHalf+10) ) ) {
-    inBox = false;
-  } else {
-    inBox= true;
-  }
-}
-
-//check if in clear
-void inClear() {
-  if (( (mouseX < 10) || (mouseX > 110) ) || ( (mouseY < 13) || (mouseY > 37) ) ) {
-    inClear = false;
-  } else {
-    inClear= true;
-  }
-}
-
-
-
-//----------------------------------array points in zones
-
-void checkZone(int i ) {
- 
-  if(
-      (  ax[i] > 0 && ax[i] < appSize  )  //if within boundries of the app
-      &&
-      (  ay[i] > 0 && ay[i] < appSize  )
-    ) {personZone[i] = 3;}
     
-  if(
-      (  ax[i] > (rectCenterX - rectHalf - goodZone)  )  &&  (  ax[i] < (rectCenterX + rectHalf + goodZone)  )  //if within boundries of good
-      &&
-      (  ay[i] > (rectCenterY - rectHalf - goodZone)  )  &&  (  ay[i] < (rectCenterY + rectHalf + goodZone)  )
-     ) {personZone[i] = 2;} 
-     
-  if(
-      (  ax[i] > (rectCenterX - rectHalf - dangerZone)  ) &&  (  ax[i] < (rectCenterX + rectHalf + dangerZone)  )  //if within the DANGER ZONE!
-      &&
-      (  ay[i] > (rectCenterY - rectHalf - dangerZone)  ) &&  (  ay[i] < (rectCenterY + rectHalf + dangerZone)  )
-    ) {personZone[i] = 1;} 
+    //-------------------------------------------------------------------------------- Count the number of people in zones
+    void peopleInZones() {
+      //reset number of people in zones
+      inZone1 = 0;  inZone2 = 0;  inZone3 = 0;
+      
+      for(int i = 0 ; i < arrayLength ; i++){
+        checkZone(i);
+        
+        //count number of people in Zones
+        if(personZone[i] == 1) {inZone1++;}
+        if(personZone[i] == 2) {inZone2++;}
+        if(personZone[i] == 3) {inZone3++;}
+      }
+    }
+    //-------------------------------------------------------------------------------- find most populated zone for every 'x' seconds
+    void mostusedZone() {
+      //run once at 0 seconds
+      if(current == 0 && timeRunOnce == true){
+        zone1Counter = 0;        zone2Counter = 0;        zone3Counter = 0;
+        timeRunOnce = false;
+      }
+      
+      //run while between 0 and 'x' seconds
+      if(current >= 0 && current <= 5){
+        peopleInZones();
+        
+        if(inZone1 != 0){zone1Counter++;}
+        if(inZone2 != 0){zone2Counter++;}
+        if(inZone3 != 0){zone3Counter++;}
+        
+//        println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
+//        println(" ");
+      }
+      
+      //run once at 5 seconds
+      if (current == 5 && timeRunOnce == false){
+        println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
+        int a = max(zone1Counter, zone2Counter, zone3Counter);
+        if(a == zone1Counter && zone1Counter > periodBuffer) {println("zone1 WINS");}
+        if(a == zone2Counter && zone2Counter > periodBuffer) {println("zone2 WINS");}
+        if(a == zone3Counter && zone3Counter > periodBuffer) {println("zone3 WINS");}
+        
+        if(a <= periodBuffer) {println("no one wins");}
+        timeRunOnce = true;
+      }
+    }
     
-  if(north == 400) {personZone[0] = 0;}
-  if(east == 400) {personZone[1] = 0;}
-  if(south == 400) {personZone[2] = 0;}
-  if(west == 400) {personZone[3] = 0;}
-
-
-  
-  
-
-}
-
 
 //=================================================================//
 //============================ DISPLAY ============================//
@@ -378,13 +323,17 @@ void backgroundDisplay (){
   
   if(trigger1 == true){  fill(255, 0, 0);  }else{  fill(255);  }
   rect(rectCenterX, rectCenterY, rectSize+dangerZone*2, rectSize+dangerZone*2);
+ 
+}
 
+//-------------------------------------------------------------------------------- DISPLAY FEELING TEXT
+void textDisplay() {
   // text around the rectangle
   fill(0);
   text ( "Happy", rectCenterX-20, rectCenterY-180); 
   text ( "Sad", rectCenterX-5, rectCenterY+180); 
   text ( "Excited", rectCenterX-210, rectCenterY-10); 
-  text ( "Calm", rectCenterX+180, rectCenterY-10);   
+  text ( "Calm", rectCenterX+180, rectCenterY-10);  
 }
 
 //-------------------------------------------------------------------------------- DISPLAY EMOTION GRID
@@ -428,35 +377,69 @@ void peopleDisplay() {
     }
   }
 }
+//-------------------------------------------------------------------------------- DISPLAY TIME
+void timeDisplay() {
+  text (s, 20, 20);  
+  text (current, 20, 40);  
+}
 
 //=================================================================//
 //============================== TIME =============================//
 //=================================================================//
 
-void timeTesting() {
+void timeCount() {
   fill(0);
-  int time = millis();
-  int s = time/1000;
-
-  text (s, 180, 30);
-  
-  int timeTest = 5;
-  
-  if (s >= timeTest && s < (timeTest + 120) ){
-    int nt = (s - timeTest)/2;
-    float rnt = round(nt);
-    float rntd = rnt/10;
-    
-    text (rntd, 180, 50);
+  //start counter
+  time = millis();
+  s = time/1000;
+  //time of 0 to periodLength (resetting at end)
+  current = s - remover;
+  if (current == periodLength){
+    remover = remover += periodLength;
   }
 }
 
 
+//=================================================================//
+//===================== SERIAL PORT FUNCTION ======================//
+//=================================================================//
 
+void serialEvent(Serial myPort) {
+  myString = myPort.readStringUntil(lf);
+  if (myString != null) {
+    myString = trim(myString);
+    int[] distances = int(split(myString, " "));
+    for (int i = 0 ; i < arrayLength ; i++){
+      movement[i] = distances[i];
+    }    
+     // println(distances);
+  }
+}
 
+//=================================================================//
+//============================= UNUSED ============================//
+//=================================================================//
 
+//---------------------------------------------------------------------------------------------------- people position within emotion grid
+/*
+//check if in emotion container
+void inBox () {
+  if (( (mouseX < rectCenterX-rectHalf-10) || (mouseX > rectCenterX+rectHalf+10) ) || ( (mouseY < rectCenterX-rectHalf-10) || (mouseY > rectCenterX+rectHalf+10) ) ) {
+    inBox = false;
+  } else {
+    inBox= true;
+  }
+}
 
-
+//check if in clear
+void inClear() {
+  if (( (mouseX < 10) || (mouseX > 110) ) || ( (mouseY < 13) || (mouseY > 37) ) ) {
+    inClear = false;
+  } else {
+    inClear= true;
+  }
+}
+*/
 
 
 
