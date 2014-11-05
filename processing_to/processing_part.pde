@@ -1,4 +1,4 @@
-//serial port stuff
+ //serial port stuff
 import processing.serial.*;
 
 int lf = 10;    // Linefeed in ASCII
@@ -285,13 +285,16 @@ void movePerson() {
       
       //run once at 5 seconds
       if (current == 5 && timeRunOnce == false){
-        println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
+        //println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
         int a = max(zone1Counter, zone2Counter, zone3Counter);
+        /*
         if(a == zone1Counter && zone1Counter > periodBuffer) {println("zone1 WINS");}
         if(a == zone2Counter && zone2Counter > periodBuffer) {println("zone2 WINS");}
         if(a == zone3Counter && zone3Counter > periodBuffer) {println("zone3 WINS");}
+       */
         
-        if(a <= periodBuffer) {println("no one wins");}
+        if(a <= periodBuffer) {
+        //println("no one wins");}
         timeRunOnce = true;
       }
     }
@@ -412,7 +415,7 @@ void serialEvent(Serial myPort) {
     for (int i = 0 ; i < arrayLength ; i++){
       movement[i] = distances[i];
     }    
-     // println(distances);
+     println(distances);
   }
 }
 
