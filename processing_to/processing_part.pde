@@ -88,6 +88,27 @@ int periodBuffer = 30;
 int zone1Counter = 0;
 int zone2Counter = 0;
 int zone3Counter = 0;
+int mostUsedZone;  //1:danger, 2:good, 3:outer, 0:null
+
+//complex emotion box width
+int ecstatic = 50;
+int enthusiastic = 50;
+int relaxed = 50;
+int nonchalont = 50;
+int dissapointed = 50;
+int defeated = 50;
+int frustrated = 50;
+int irritated = 50;
+
+int emoNumb = 8;
+
+float [] comEmoPosX = new float[emoNumb];
+float [] comEmoPosY = new float[emoNumb];
+float [] comEmoSizeX = new float[emoNumb];
+float [] comEmoSizeY = new float[emoNumb];
+int activeBox;
+
+float zero = rectCenterX-rectSize/2;
 
 //=================================================================//
 //============================== SETUP ============================//
@@ -110,6 +131,17 @@ void setup() {
     ay [i] = 0;
     aZone[i] = 0;
   }
+  
+  //complex emotion points and sizes
+  comEmoPosX[0] = zero;         comEmoPosY[0] = zero+50;     comEmoSizeX[0] = 80;     comEmoSizeY[0] = 150;
+  comEmoPosX[1] = zero+85;      comEmoPosY[1] = zero+60;     comEmoSizeX[1] = 80;     comEmoSizeY[1] = 90;
+  comEmoPosX[2] = zero+220;     comEmoPosY[2] = zero+20;     comEmoSizeX[2] = 120;    comEmoSizeY[2] = 120;
+  comEmoPosX[3] = zero+205;     comEmoPosY[3] = zero+125;    comEmoSizeX[3] = 120;    comEmoSizeY[3] = 30;
+  comEmoPosX[4] = zero+190;     comEmoPosY[4] = zero+190;    comEmoSizeX[4] = 90;     comEmoSizeY[4] = 80;
+  comEmoPosX[5] = zero+170;     comEmoPosY[5] = zero+250;    comEmoSizeX[5] = 140;    comEmoSizeY[5] = 30;
+  comEmoPosX[6] = zero+20;      comEmoPosY[6] = zero+230;    comEmoSizeX[6] = 80;     comEmoSizeY[6] = 100;
+  comEmoPosX[7] = zero+105;     comEmoPosY[7] = zero+160;    comEmoSizeX[7] = 75;    comEmoSizeY[7] = 80;
+
 }
 
 //=================================================================//
@@ -121,6 +153,7 @@ void draw() {
   backgroundDisplay();  //make the background boxes
   textDisplay();
   emotionGridDisplay(); //make the emotion box & grid
+  complexEmotions();
   
   timeCount();          //time logic
   timeDisplay();        //display time counters
@@ -144,7 +177,12 @@ void draw() {
 void emotionDot () {
 
     peopleInZones();
-
+    
+    activeBox = 0;
+    for(int i = 0 ; i < emoNumb ; i++){
+      ifEmoInBox(comEmoPosX[i], comEmoPosY[i], comEmoSizeX[i], comEmoSizeY[i], i+1);
+    }
+    
     //-----------------------------------------------------movement logic
     //if more people in good than outer
     if(inZone1 > 0){
@@ -155,7 +193,7 @@ void emotionDot () {
       moveY += 0.5;
      }
     
-
+    
 
 
   //limit emotion point to buffer
@@ -201,7 +239,13 @@ void emotionDot () {
     //===================== EMOtiON SUB FUNCTIONS =====================//
     //=================================================================//
 
-
+    void ifEmoInBox(float boxX, float boxY, float distX, float distY, int within) {
+      //check within boundries
+      if(posX >= (boxX-(distX/2)) && posX <= (boxX+(distX/2)) && posY >= (boxY-(distY/2)) && posY <= (boxY+(distY/2))){
+          activeBox = within;
+      }
+    println(activeBox);
+    }
 
 
 
@@ -247,7 +291,8 @@ void movePerson() {
         
       //set zone 0 to be no detection by sensor   
       if(north == 0) {personZone[0] = 0;}  if(east == 0) {personZone[1] = 0;}  if(south == 0) {personZone[2] = 0;}  if(west == 0) {personZone[3] = 0;}
-    }
+ 
+  }
     
     //-------------------------------------------------------------------------------- Count the number of people in zones
     void peopleInZones() {
@@ -256,11 +301,11 @@ void movePerson() {
       
       for(int i = 0 ; i < arrayLength ; i++){
         checkZone(i);
-        
         //count number of people in Zones
         if(personZone[i] == 1) {inZone1++;}
         if(personZone[i] == 2) {inZone2++;}
         if(personZone[i] == 3) {inZone3++;}
+        
       }
     }
     //-------------------------------------------------------------------------------- find most populated zone for every 'x' seconds
@@ -278,26 +323,36 @@ void movePerson() {
         if(inZone1 != 0){zone1Counter++;}
         if(inZone2 != 0){zone2Counter++;}
         if(inZone3 != 0){zone3Counter++;}
-        
-//        println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
-//        println(" ");
+
       }
       
       //run once at 5 seconds
       if (current == 5 && timeRunOnce == false){
-        //println("1:" + zone1Counter + " 2:" + zone2Counter + " 3:" + zone3Counter);
         int a = max(zone1Counter, zone2Counter, zone3Counter);
-        /*
-        if(a == zone1Counter && zone1Counter > periodBuffer) {println("zone1 WINS");}
-        if(a == zone2Counter && zone2Counter > periodBuffer) {println("zone2 WINS");}
-        if(a == zone3Counter && zone3Counter > periodBuffer) {println("zone3 WINS");}
-       */
+        //most used individually
+        if(a == zone1Counter && zone1Counter > periodBuffer) {mostUsedZone=1;}
+        if(a == zone2Counter && zone2Counter > periodBuffer) {mostUsedZone=2;}
+        if(a == zone3Counter && zone3Counter > periodBuffer) {mostUsedZone=3;}
+        //any detection lasting under 'x' time is not recognised
+        if(a <= periodBuffer) {mostUsedZone=0;}
+        //if multiple most used
+        println(zone1Counter);
+        println(zone2Counter);
+        println(zone3Counter);
+        println(" ");
+        if(zone1Counter + zone2Counter >= 600 || zone1Counter + zone3Counter >= 600 || zone2Counter + zone3Counter >= 600){
+          println("rekt");
+        }
         
-        if(a <= periodBuffer) {
-        //println("no one wins");}
+        
         timeRunOnce = true;
+        
+        //println(mostUsedZone);
       }
+      
+      
     }
+   
     
 
 //=================================================================//
@@ -342,6 +397,7 @@ void textDisplay() {
 //-------------------------------------------------------------------------------- DISPLAY EMOTION GRID
 void emotionGridDisplay () {
   fill(255);
+  strokeWeight(0);
   stroke(0);
   rect(rectCenterX, rectCenterY, rectSize, rectSize);
 
@@ -351,6 +407,18 @@ void emotionGridDisplay () {
     noFill();
     rect(rectCenterX, rectCenterY, (rectSize/10)*i, (rectSize/10)*i);
   }  
+}
+
+//-------------------------------------------------------------------------------- DISPLAY COMPLEX EMOTIONS
+void complexEmotions () {
+
+  rectMode(CENTER);
+  strokeWeight(1);
+  stroke(50);
+  
+  for(int i = 0 ; i < emoNumb ; i++){
+     rect(comEmoPosX[i], comEmoPosY[i], comEmoSizeX[i], comEmoSizeY[i]);
+  }
 }
 
 //-------------------------------------------------------------------------------- DISPLAY EMOTION DOT AND BUFFER
@@ -415,7 +483,7 @@ void serialEvent(Serial myPort) {
     for (int i = 0 ; i < arrayLength ; i++){
       movement[i] = distances[i];
     }    
-     println(distances);
+     //println(distances);
   }
 }
 
