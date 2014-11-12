@@ -1,8 +1,7 @@
-int w = 800; int h = 500;
-int n = 50;
+int w = 1100; int h = 1000;
+int n = 160;
 int hn = n/2;
-float ht = sqrt( sq(hn) + sq(hn) );
-int x = 400; int y = 250;
+int x = w/2; int y = h/2;
 
 void setup() {
   
@@ -16,7 +15,7 @@ int c2 = int( sqrt ( sq(w-x-hn) + sq(y-hn)  ) );
 int c3 = int( sqrt ( sq(w-x-hn) + sq(h-y-hn)  ) );
 int c4 = int( sqrt ( sq(x-hn) + sq(h-y-hn)  ) );  
 
-int midPoint = 403;
+int midPoint = 0;
 
 int p1 = midPoint - c1;
 int p2 = midPoint - c2;
@@ -29,20 +28,20 @@ println(p2);
 println(p1);
   
   
-  
-  ellipse(x, y, n, n);
+  rectMode(CENTER);
+  rect(x, y, n, n);
   //HYPOTENOOOOOOOSE
   stroke(200,50,50);
-  line(0,h,x-ht,y+ht); //C1  //red
+  line(0,h,x-hn,y+hn); //C1  //red
   
   stroke(50,200,50);
-  line(w,h,x+ht,y+ht); //C2        //green
+  line(w,h,x+hn,y+hn); //C2        //green
   
   stroke(50,50,200);
-  line(w,0,x+ht,y-ht); //C3        //blue
+  line(w,0,x+hn,y-hn); //C3        //blue
   
   stroke(50,50,50);
-  line(0,0,x-ht,y-ht); //C4        //black
+  line(0,0,x-hn,y-hn); //C4        //black
   
   
 
@@ -51,8 +50,9 @@ println(p1);
 
 
 
-
-
+//  800 |  624
+//  700 |  596
+//  600 |  572
 
 
 

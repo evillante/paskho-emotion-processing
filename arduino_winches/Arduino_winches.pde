@@ -19,20 +19,7 @@ Servo servo8;
 
 
 int mid = 1500;
-int spiderUp = mid + -50;
-
-//spider dimens
-float lengthX = 900;
-float lengthY = 600;
-  //ring 
-  float rw = 10;
-  float hrw = rw/2;
-
-//movement of x & y axis
-float moveX = 0;
-float moveY = 0;
-
-
+int spiderUp = mid + 130;
 //ring variables
 int frameUp = mid + -100;
 int mag = 150;
@@ -40,14 +27,35 @@ int circSeg = 1000;
 
 //find the midpoint of the frame
 int s1i = spiderUp + 0;
-int s2i = spiderUp + 140;
-int s3i = spiderUp + 100;
-int s4i = spiderUp + 130;
+int s2i = spiderUp + 0;
+int s3i = spiderUp + -30;
+int s4i = spiderUp + 0;
 
 int s5i = frameUp + 100;
 int s6i = frameUp + 70;
 int s7i = frameUp + 20;
 int s8i = frameUp + 130;
+
+//spider dimens
+float lengthX = 1100;
+float lengthY = 800;
+
+int midPoint = 630; //when all lines are equal distance
+
+//ring 
+float rw = 160;
+float hrw = rw/2;
+
+//movement of x & y axis
+float moveX = 1100;
+float moveY = 100;
+
+
+
+
+
+
+
 
 //HYPOTENOOSE
 
@@ -57,7 +65,6 @@ int h3 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(lengthY-moveY-hrw)) );
 int h4 =  int( sqrt ( sq(moveX-hrw) + sq(lengthY-moveY-hrw)) );
 
 
-int midPoint = 403; //when all lines are equal distance
 int c1 = midPoint - h1;
 int c2 = midPoint - h2;
 int c3 = midPoint - h3;
