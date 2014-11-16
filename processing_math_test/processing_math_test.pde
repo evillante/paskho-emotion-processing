@@ -1,14 +1,16 @@
-int w = 1100; int h = 1000;
-int n = 160;
-int hn = n/2;
-int x = w/2; int y = h/2;
+float w = 1100; float h = 880;
+int appW = int(w); int appH = int(h);
+
+float hn = 68.75;
+float n = hn*2;
+float x = w/2; float y = h/2;
 
 void setup() {
   
 if(x < hn){x = hn;}  if(x > w-hn) {x = w-hn;}
 if(y < hn){y = hn;}  if(y > h-hn) {y = h-hn;}
 
-size (w,h);
+size (appW,appH);
 
 int c1 = int( sqrt ( sq(x-hn) + sq(y-hn)  ) );
 int c2 = int( sqrt ( sq(w-x-hn) + sq(y-hn)  ) );
@@ -43,16 +45,18 @@ println(p1);
   stroke(50,50,50);
   line(0,0,x-hn,y-hn); //C4        //black
   
-  
+
+  float xt = 550;
+  float test = 0;
+
+  if(xt > 900){
+    test = map(test, 900, 1100, 0, 60);
+  }
+
 
 }
 
 
-
-
-//  800 |  624
-//  700 |  596
-//  600 |  572
 
 
 

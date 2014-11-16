@@ -3,6 +3,19 @@
 //======================== SERVO ========================//
 //=======================================================// 
 
+float troub1 = 0;
+float troub2 = 0;
+float troub3 = 0;
+float troub4 = 0;
+
+float troubXB = 0;
+float troubXS = 0;
+
+float troubYB = 0;
+float troubYS = 0;
+
+float troubTX = 0;
+
 // servo library
 #include <Servo.h>  
 
@@ -17,38 +30,33 @@ Servo servo6;
 Servo servo7;  
 Servo servo8;
 
+int mid;
+int spiderUp;
+int frameUp;
+int mag;
+int circSeg;
 
-int mid = 1500;
-int spiderUp = mid + 130;
-//ring variables
-int frameUp = mid + -100;
-int mag = 150;
-int circSeg = 1000;
-
-//find the midpoint of the frame
-int s1i = spiderUp + 0;
-int s2i = spiderUp + 0;
-int s3i = spiderUp + -30;
-int s4i = spiderUp + 0;
-
-int s5i = frameUp + 100;
-int s6i = frameUp + 70;
-int s7i = frameUp + 20;
-int s8i = frameUp + 130;
+int s1i;
+int s2i;
+int s3i;
+int s4i;
+int s5i;
+int s6i;
+int s7i;
+int s8i;
 
 //spider dimens
-float lengthX = 1100;
-float lengthY = 800;
-
-int midPoint = 630; //when all lines are equal distance
+float lengthX;
+float lengthY;
+int midPoint;
 
 //ring 
-float rw = 160;
-float hrw = rw/2;
+float rw;
+float hrw;
 
 //movement of x & y axis
-float moveX = 1100;
-float moveY = 100;
+float moveX;
+float moveY; 
 
 
 
@@ -57,18 +65,6 @@ float moveY = 100;
 
 
 
-//HYPOTENOOSE
-
-int h1 =  int( sqrt ( sq(moveX-hrw) + sq(moveY-hrw)) );
-int h2 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(moveY-hrw)) );
-int h3 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(lengthY-moveY-hrw)) );
-int h4 =  int( sqrt ( sq(moveX-hrw) + sq(lengthY-moveY-hrw)) );
-
-
-int c1 = midPoint - h1;
-int c2 = midPoint - h2;
-int c3 = midPoint - h3;
-int c4 = midPoint - h4;
 
 //=================================================================//
 //============================== SETUP ============================//
@@ -77,8 +73,7 @@ int c4 = midPoint - h4;
 void setup()
 {
   Serial.begin(300);
-  if(moveX < hrw){moveX = hrw;}  //if(moveY > lengthX-hrw){moveX=lengthX-hrw;}
-  if(moveY < hrw){moveY = hrw;}  //if(moveY > lengthY-hrw){moveX=lengthY-hrw;}
+
   
   //============================ SERVO
   //initialize servos (pin, min range, max range).
@@ -92,11 +87,107 @@ void setup()
   servo6.attach(3, 1000, 2000);
   servo7.attach(12, 1000, 2000);
   servo8.attach(13, 1000, 2000);    
+  
 
-  Serial.println(c1);
-  Serial.println(c2);
-  Serial.println(c3);
-  Serial.println(c4);
+    
+  mid = 1500;
+  spiderUp = mid + -80;
+  //ring variables
+  frameUp = mid + -100;
+  mag = 150;
+  circSeg = 1000;
+  
+  //spider dimens
+  lengthX = 1100;
+  lengthY = 800;
+  
+  int midPoint = 630; //when all lines are equal distance
+  
+  //ring 
+  rw = 160;
+  hrw = rw/2;  
+  
+
+
+  
+  //movement of x & y axis
+  moveX = 450;
+  moveY = 400;  
+
+
+
+//================================================
+//================= TROUBLESHOOT =================
+//================================================
+
+/* This is tweaking/callibrating the position of the spider based off the initial co-geo position*/
+  
+  if(moveX>=800){
+    troub1 = map(moveX, 800, 1100, 0, 150);    
+    troub2 = map(moveX, 800, 1100, 0, 50);
+    troub3 = map(moveX, 800, 1100, 0, 30);
+    troub4 = map(moveX, 800, 1100, 0, 150);
+  }
+
+  if(moveX<=500){
+    troubXS = map(moveX, 0, 500, 0, 120);
+    troubXS = 120-troubXS;
+    troub2 = troub2 + (50 - map(moveX, 0, 500, 0, 50));
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
+  }
+  
+  //callibration for the Y position
+  if(moveY>400){
+    troubYB = map(moveY, 400, 800, 0, 100);
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
+  }
+  
+  if(moveY<400){
+    troubYS = map(moveY, 0, 400, 0, 80);
+    troubYS = 80 - troubYS;
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
+  }
+  
+  
+  
+  
+  if(moveX > 800 && moveY > 400){
+    Serial.println(troubXB);
+    Serial.println(troubXS);
+    Serial.println(troubYB);
+    Serial.println(troubYS);  
+  }
+  
+
+
+//================================================
+//================================================
+
+
+
+
+  //find the midpoint of the frame
+  s1i = spiderUp + 30 + troub1;
+  s2i = spiderUp + 30 + troub2;
+  s3i = spiderUp + 0 + troub3;
+  s4i = spiderUp + 0 + troub4;
+  
+  s5i = frameUp + 100;
+  s6i = frameUp + 70;
+  s7i = frameUp + 20;
+  s8i = frameUp + 130;
+
+  //HYPOTENOOSE
+  int h1 =  int( sqrt ( sq(moveX-hrw) + sq(moveY-hrw)) );
+  int h2 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(moveY-hrw)) );
+  int h3 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(lengthY-moveY-hrw)) );
+  int h4 =  int( sqrt ( sq(moveX-hrw) + sq(lengthY-moveY-hrw)) );
+  
+  
+  int c1 = midPoint - h1;
+  int c2 = midPoint - h2;
+  int c3 = midPoint - h3;
+  int c4 = midPoint - h4;
   
   //set initial position
   servo1.writeMicroseconds(s1i + c1);
@@ -109,13 +200,6 @@ void setup()
   servo7.writeMicroseconds(s7i);
   servo8.writeMicroseconds(s8i);    
 
-  
-/*
-  Serial.println(c4);
-  Serial.println(c3);
-  Serial.println(c2);
-  Serial.println(c1);
-*/
 
 }
 
@@ -125,7 +209,7 @@ void setup()
 
 void loop()
 {
-  //ring();
+ //ring();
 }
 
 
@@ -140,60 +224,68 @@ void loop()
     servo6.writeMicroseconds(s6i);  
     servo7.writeMicroseconds(s7i - mag);
     servo8.writeMicroseconds(s8i);
+    delay(1000);
     //1-2 up
     servo5.writeMicroseconds(s5i + mag);
     servo6.writeMicroseconds(s6i + mag);  
     servo7.writeMicroseconds(s7i - mag);
     servo8.writeMicroseconds(s8i - mag);
+    delay(1000);
     //2 up
     servo5.writeMicroseconds(s5i);
     servo6.writeMicroseconds(s6i + mag);  
     servo7.writeMicroseconds(s7i);
     servo8.writeMicroseconds(s8i - mag);
+    delay(1000);
     //2-3 up
     servo5.writeMicroseconds(s5i - mag);
     servo6.writeMicroseconds(s6i + mag);  
     servo7.writeMicroseconds(s7i + mag);
     servo8.writeMicroseconds(s8i - mag);
+    delay(1000);
     //3 up
     servo5.writeMicroseconds(s5i - mag);
     servo6.writeMicroseconds(s6i);  
     servo7.writeMicroseconds(s7i + mag);
     servo8.writeMicroseconds(s8i);
+    delay(1000);
     //3-4 up
     servo5.writeMicroseconds(s5i - mag);
     servo6.writeMicroseconds(s6i - mag);  
     servo7.writeMicroseconds(s7i + mag);
-    servo8.writeMicroseconds(s8i + mag); 
+    servo8.writeMicroseconds(s8i + mag);
+   delay(1000); 
     //4 up
     servo5.writeMicroseconds(s5i);
     servo6.writeMicroseconds(s6i - mag);  
     servo7.writeMicroseconds(s7i);
     servo8.writeMicroseconds(s8i + mag);
+    delay(1000);
     //4-1 up
     servo5.writeMicroseconds(s5i + mag);
     servo6.writeMicroseconds(s6i - mag);  
     servo7.writeMicroseconds(s7i - mag);
     servo8.writeMicroseconds(s8i + mag);
+    delay(1000);
     //ALL MID
     servo5.writeMicroseconds(s5i);
     servo6.writeMicroseconds(s6i);  
     servo7.writeMicroseconds(s7i);
     servo8.writeMicroseconds(s8i);   
+    delay(1000);
  }
   
-  
- 
- void checkPull () {
-   if (h1 > 262) {h1 = -h1;}
-   if (h2 > 262) {h2 = -h2;}
-   if (h3 > 262) {h3 = -h3;}
-   if (h4 > 262) {h4 = -h4;}
- }
- 
- long CmMs(long cm){
-   return (cm*29*2);
- }
+void reset() {
+troub1 = 0;
+troub2 = 0;
+troub3 = 0;
+troub4 = 0;
+
+troubXB = 0;
+troubXS = 0;
+troubYB = 0;
+troubYS = 0;
+}
   
   
   
