@@ -35,7 +35,8 @@ Servo servoM2;
 
 Servo servoS;
 
-int microMid = 100;
+int microTroub1 = 100;
+int microTroub2 = 120;
 int microDev;
 
 int mid;
@@ -70,7 +71,7 @@ float moveY;
 int h1; int h2; int h3; int h4;
 int c1; int c2; int c3; int c4; 
 
-int zTop = 1680;
+int zTop = 1900;
 int zBot = 1100;
 int dropDelay;
 
@@ -110,8 +111,8 @@ void setup()
   mid = 1500;
   spiderUp = mid + 80;
   //ring variables
-  frameMid = 1900;
-  mag = 150;
+  frameMid = 1600;
+  mag = 250;
   circSeg = 1000;
   
   //spider dimens
@@ -126,13 +127,13 @@ void setup()
 
   //set values to 0
   startUp();
-
   //test
-//  moveX = 550;
-//  moveY = 400;
+//  moveX = 150;
+//  moveY = 500;
 //  moveSpider(moveX, moveY);
-  //paint(3);
-
+  
+  paint(3);
+  //ring(2700);
 
 
 }
@@ -164,14 +165,15 @@ void paint(int b) {
     moveSpider(moveX, moveY);
     delay(3000); 
     //drop/raise sponge
-    spongeToCont(1700);
+    spongeToCont(1850);
     //move to mid
-    moveX = 550;
+    moveX = 350;
     moveY = 400;
     moveSpider(moveX, moveY);
     delay(3000);
     //clamp
     clamp(1500);
+    ring(1500);
   }
 }
 
@@ -183,13 +185,13 @@ void spongeToCont(int d) {
 }
 
 void clamp(int d){
-  microDev = 20; 
-  servoM1.write(microMid - microDev);
-  servoM2.write(microMid - microDev);
+  microDev = 28; 
+  servoM1.write(microTroub1 - microDev);
+  servoM2.write(microTroub2 - microDev);
   delay(d);
   microDev = 0; 
-  servoM1.write(microMid - microDev);
-  servoM2.write(microMid - microDev); 
+  servoM1.write(microTroub1 - microDev);
+  servoM2.write(microTroub2 - microDev); 
 }
 
 void startUp() {
@@ -203,8 +205,8 @@ void startUp() {
   moveY = 400;
   moveSpider(moveX, moveY);
   //open microservo
-  servoM1.write(microMid);
-  servoM2.write(microMid);
+  servoM1.write(microTroub1);
+  servoM2.write(microTroub2);
   delay(1000);
   //raise sponge
   servoS.writeMicroseconds(zTop);
@@ -216,12 +218,12 @@ void startUp() {
 void microTest() {
  delay(1000);
   microDev = 0; 
-  servoM1.write(microMid - microDev);
-  servoM2.write(microMid - microDev);
+  servoM1.write(microTroub1 - microDev);
+  servoM2.write(microTroub2 - microDev);
  delay(1000);
   microDev = 20; 
-  servoM1.write(microMid - microDev);
-  servoM2.write(microMid - microDev);  
+  servoM1.write(microTroub1 - microDev);
+  servoM2.write(microTroub2 - microDev);  
   }  
 
 void sexBot() {
@@ -247,9 +249,9 @@ void moveSpider(int x,int y) {
     troub4 = map(x, 800, 1100, 0, 150);
   }
 //
-  if(x<550){
-    troubXS = map(x, 0, 550, 0, 180);
-    troubXS = 180-troubXS;
+  if(x<550 && y==400){
+    troubXS = map(x, 0, 550, 0, 50);
+    troubXS = 50-troubXS;
     //troub2 = troub2 + (50 - map(moveX, 0, 500, 0, 50));
     spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS + troubXY;
   }
@@ -311,64 +313,73 @@ void moveSpider(int x,int y) {
 //=============================== RING ============================//
 //=================================================================//
 
-// void ring (){
-// 
-//    //1 up
-//    servo5.writeMicroseconds(s5i + mag);
-//    servo6.writeMicroseconds(s6i);  
-//    servo7.writeMicroseconds(s7i - mag);
-//    servo8.writeMicroseconds(s8i);
-//    delay(1000);
-//    //1-2 up
-//    servo5.writeMicroseconds(s5i + mag);
-//    servo6.writeMicroseconds(s6i + mag);  
-//    servo7.writeMicroseconds(s7i - mag);
-//    servo8.writeMicroseconds(s8i - mag);
-//    delay(1000);
-//    //2 up
-//    servo5.writeMicroseconds(s5i);
-//    servo6.writeMicroseconds(s6i + mag);  
-//    servo7.writeMicroseconds(s7i);
-//    servo8.writeMicroseconds(s8i - mag);
-//    delay(1000);
-//    //2-3 up
-//    servo5.writeMicroseconds(s5i - mag);
-//    servo6.writeMicroseconds(s6i + mag);  
-//    servo7.writeMicroseconds(s7i + mag);
-//    servo8.writeMicroseconds(s8i - mag);
-//    delay(1000);
-//    //3 up
-//    servo5.writeMicroseconds(s5i - mag);
-//    servo6.writeMicroseconds(s6i);  
-//    servo7.writeMicroseconds(s7i + mag);
-//    servo8.writeMicroseconds(s8i);
-//    delay(1000);
-//    //3-4 up
-//    servo5.writeMicroseconds(s5i - mag);
-//    servo6.writeMicroseconds(s6i - mag);  
-//    servo7.writeMicroseconds(s7i + mag);
-//    servo8.writeMicroseconds(s8i + mag);
-//   delay(1000); 
-//    //4 up
-//    servo5.writeMicroseconds(s5i);
-//    servo6.writeMicroseconds(s6i - mag);  
-//    servo7.writeMicroseconds(s7i);
-//    servo8.writeMicroseconds(s8i + mag);
-//    delay(1000);
-//    //4-1 up
-//    servo5.writeMicroseconds(s5i + mag);
-//    servo6.writeMicroseconds(s6i - mag);  
-//    servo7.writeMicroseconds(s7i - mag);
-//    servo8.writeMicroseconds(s8i + mag);
-//    delay(1000);
-//    //ALL MID
-//    servo5.writeMicroseconds(s5i);
-//    servo6.writeMicroseconds(s6i);  
-//    servo7.writeMicroseconds(s7i);
-//    servo8.writeMicroseconds(s8i);   
-//    delay(1000);
-// }
-//  
+ void ring (int d){
+ 
+    //1 up
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid);
+    clamp(700);
+    delay(d);
+    //1-2 up
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid - mag);
+    clamp(700);
+    delay(d);
+    //2 up
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid - mag);
+    clamp(700);
+    delay(d);
+    //2-3 up
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid - mag);
+    clamp(700);
+    delay(d);
+    //3 up
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid);
+    clamp(700);
+    delay(d);
+    //3-4 up
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid + mag);
+    clamp(700);
+   delay(d); 
+    //4 up
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid + mag);
+    clamp(700);
+    delay(d);
+    //4-1 up
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid + mag);
+    clamp(700);
+    delay(d);
+    //ALL MID
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid);   
+    clamp(700);
+    delay(d);
+ }
+  
 
 //=================================================================//
 //============================ Experiment =========================//
