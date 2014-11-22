@@ -14,7 +14,7 @@ float troubXS = 0;
 float troubYB = 0;
 float troubYS = 0;
 
-float troubTX = 0;
+float troubXY = 0;
 
 // servo library
 #include <Servo.h>  
@@ -29,10 +29,18 @@ Servo servo5;
 Servo servo6;
 Servo servo7;  
 Servo servo8;
+  //painter
+Servo servoM1;  
+Servo servoM2;
+
+Servo servoS;
+
+int microMid = 100;
+int microDev;
 
 int mid;
 int spiderUp;
-int frameUp;
+int frameMid;
 int mag;
 int circSeg;
 
@@ -56,9 +64,15 @@ float hrw;
 
 //movement of x & y axis
 float moveX;
-float moveY; 
+float moveY;
 
+//math
+int h1; int h2; int h3; int h4;
+int c1; int c2; int c3; int c4; 
 
+int zTop = 1680;
+int zBot = 1100;
+int dropDelay;
 
 
 
@@ -79,21 +93,24 @@ void setup()
   //initialize servos (pin, min range, max range).
   //spider
   servo1.attach(10, 1000, 2000);
-  servo2.attach(5, 1000, 2000);
-  servo3.attach(4, 1000, 2000);
+  servo2.attach(4, 1000, 2000);
+  servo3.attach(5, 1000, 2000);
   servo4.attach(11, 1000, 2000);  
   //frame
-  servo5.attach(2, 1000, 2000);
-  servo6.attach(3, 1000, 2000);
-  servo7.attach(12, 1000, 2000);
-  servo8.attach(13, 1000, 2000);    
-  
+  servo5.attach(12, 1000, 2000);
+  servo6.attach(7, 1000, 2000);
+  servo7.attach(6, 1000, 2000);
+  servo8.attach(13, 1000, 2000); 
 
+  servoM1.attach(3);  
+  servoM2.attach(8);  
+  servoS.attach(2, 1000, 2000);  
+ 
     
   mid = 1500;
-  spiderUp = mid + -80;
+  spiderUp = mid + 80;
   //ring variables
-  frameUp = mid + -100;
+  frameMid = 1900;
   mag = 150;
   circSeg = 1000;
   
@@ -101,104 +118,21 @@ void setup()
   lengthX = 1100;
   lengthY = 800;
   
-  int midPoint = 630; //when all lines are equal distance
+  midPoint = 630; //when all lines are equal distance
   
   //ring 
   rw = 160;
   hrw = rw/2;  
-  
 
+  //set values to 0
+  startUp();
 
-  
-  //movement of x & y axis
-  moveX = 450;
-  moveY = 400;  
+  //test
+//  moveX = 550;
+//  moveY = 400;
+//  moveSpider(moveX, moveY);
+  //paint(3);
 
-
-
-//================================================
-//================= TROUBLESHOOT =================
-//================================================
-
-/* This is tweaking/callibrating the position of the spider based off the initial co-geo position*/
-  
-  if(moveX>=800){
-    troub1 = map(moveX, 800, 1100, 0, 150);    
-    troub2 = map(moveX, 800, 1100, 0, 50);
-    troub3 = map(moveX, 800, 1100, 0, 30);
-    troub4 = map(moveX, 800, 1100, 0, 150);
-  }
-
-  if(moveX<=500){
-    troubXS = map(moveX, 0, 500, 0, 120);
-    troubXS = 120-troubXS;
-    troub2 = troub2 + (50 - map(moveX, 0, 500, 0, 50));
-    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
-  }
-  
-  //callibration for the Y position
-  if(moveY>400){
-    troubYB = map(moveY, 400, 800, 0, 100);
-    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
-  }
-  
-  if(moveY<400){
-    troubYS = map(moveY, 0, 400, 0, 80);
-    troubYS = 80 - troubYS;
-    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS;
-  }
-  
-  
-  
-  
-  if(moveX > 800 && moveY > 400){
-    Serial.println(troubXB);
-    Serial.println(troubXS);
-    Serial.println(troubYB);
-    Serial.println(troubYS);  
-  }
-  
-
-
-//================================================
-//================================================
-
-
-
-
-  //find the midpoint of the frame
-  s1i = spiderUp + 30 + troub1;
-  s2i = spiderUp + 30 + troub2;
-  s3i = spiderUp + 0 + troub3;
-  s4i = spiderUp + 0 + troub4;
-  
-  s5i = frameUp + 100;
-  s6i = frameUp + 70;
-  s7i = frameUp + 20;
-  s8i = frameUp + 130;
-
-  //HYPOTENOOSE
-  int h1 =  int( sqrt ( sq(moveX-hrw) + sq(moveY-hrw)) );
-  int h2 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(moveY-hrw)) );
-  int h3 =  int( sqrt ( sq(lengthX-moveX-hrw) + sq(lengthY-moveY-hrw)) );
-  int h4 =  int( sqrt ( sq(moveX-hrw) + sq(lengthY-moveY-hrw)) );
-  
-  
-  int c1 = midPoint - h1;
-  int c2 = midPoint - h2;
-  int c3 = midPoint - h3;
-  int c4 = midPoint - h4;
-  
-  //set initial position
-  servo1.writeMicroseconds(s1i + c1);
-  servo2.writeMicroseconds(s2i + c2);  
-  servo3.writeMicroseconds(s3i + c3);
-  servo4.writeMicroseconds(s4i + c4);   
-
-  servo5.writeMicroseconds(s5i);
-  servo6.writeMicroseconds(s6i);  
-  servo7.writeMicroseconds(s7i);
-  servo8.writeMicroseconds(s8i);    
 
 
 }
@@ -210,82 +144,278 @@ void setup()
 void loop()
 {
  //ring();
+ //microTest();
+ //sexBot();
 }
 
 
+
+
+//=================================================================//
+//========================= SMALL FUNCTIONS =======================//
+//=================================================================//
+
+
+void paint(int b) {
+  if(b ==3){
+    //move over container
+    moveX = 850;
+    moveY = 400;
+    moveSpider(moveX, moveY);
+    delay(3000); 
+    //drop/raise sponge
+    spongeToCont(1700);
+    //move to mid
+    moveX = 550;
+    moveY = 400;
+    moveSpider(moveX, moveY);
+    delay(3000);
+    //clamp
+    clamp(1500);
+  }
+}
+
+void spongeToCont(int d) {
+    servoS.writeMicroseconds(zBot);
+    delay(d); 
+    servoS.writeMicroseconds(zTop);
+    delay(d);
+}
+
+void clamp(int d){
+  microDev = 20; 
+  servoM1.write(microMid - microDev);
+  servoM2.write(microMid - microDev);
+  delay(d);
+  microDev = 0; 
+  servoM1.write(microMid - microDev);
+  servoM2.write(microMid - microDev); 
+}
+
+void startUp() {
+  //center frame
+  servo5.writeMicroseconds(frameMid);
+  servo6.writeMicroseconds(frameMid);  
+  servo7.writeMicroseconds(frameMid);
+  servo8.writeMicroseconds(frameMid);  
+  //center spider
+  moveX = 550;
+  moveY = 400;
+  moveSpider(moveX, moveY);
+  //open microservo
+  servoM1.write(microMid);
+  servoM2.write(microMid);
+  delay(1000);
+  //raise sponge
+  servoS.writeMicroseconds(zTop);
+  delay(3000); 
+}
+
+
+
+void microTest() {
+ delay(1000);
+  microDev = 0; 
+  servoM1.write(microMid - microDev);
+  servoM2.write(microMid - microDev);
+ delay(1000);
+  microDev = 20; 
+  servoM1.write(microMid - microDev);
+  servoM2.write(microMid - microDev);  
+  }  
+
+void sexBot() {
+  servoS.writeMicroseconds(zTop); 
+  delay(4000);
+  servoS.writeMicroseconds(zBot); 
+  delay(4000);
+}
+
+//=================================================================//
+//=============================== MOVE ============================//
+//=================================================================//
+
+void moveSpider(int x,int y) {
+
+  //===========================Troubleshoot===========================
+  
+  //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  if(x>=800){
+    troub1 = map(x, 800, 1100, 0, 150);    
+    troub2 = map(x, 800, 1100, 0, 170);
+    troub3 = map(x, 800, 1100, 0, 170);
+    troub4 = map(x, 800, 1100, 0, 150);
+  }
+//
+  if(x<550){
+    troubXS = map(x, 0, 550, 0, 180);
+    troubXS = 180-troubXS;
+    //troub2 = troub2 + (50 - map(moveX, 0, 500, 0, 50));
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS + troubXY;
+  }
+//
+  //YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+  if(y>400){
+    troubYS = map(y, 400, 800, 0, 180); 
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS + troubXY;
+  }
+//  
+  if(y<400){
+    troubYS = map(y, 0, 400, 0, 150);
+    troubYS = 150 - troubYS;
+    spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS + troubXY;
+  }
+//  
+  //XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY
+  if(x > 800 && y > 400){
+    int tot = map(x, 800, 1100, 0, 50) + (25 - map(y, 400, 800, 0, 50));
+    troub3 = troub3 + tot;
+    troub2 = troub2 - tot;
+    troub1 = troub1 - tot;
+    troub4 = troub4 - tot;
+  }  
+  
+//  if(x<400 && y > 400){
+//  int tot2 = (100- map(x, 0, 400, 0, 100)) + (map(y, 400, 800, 0, 100));
+//  troubXY = -tot2;
+//  spiderUp = spiderUp + troubXB + troubXS + troubYB + troubYS + troubXY;
+//  }
+//  
+  
+  //==========================Set Individual==========================
+  s1i = spiderUp + 0 + troub1;
+  s2i = spiderUp + -50 + troub2;
+  s3i = spiderUp + -50 + troub3;
+  s4i = spiderUp + 0 + troub4;
+
+  
+  //============================I Hate Math===========================
+  h1 =  int( sqrt ( sq(x-hrw) + sq(y-hrw)) );
+  h2 =  int( sqrt ( sq(lengthX-x-hrw) + sq(y-hrw)) );
+  h3 =  int( sqrt ( sq(lengthX-x-hrw) + sq(lengthY-y-hrw)) );
+  h4 =  int( sqrt ( sq(x-hrw) + sq(lengthY-y-hrw)) );
+  
+  c1 = s1i + midPoint - h1;
+  c2 = s2i + midPoint - h2;
+  c3 = s3i + midPoint - h3;
+  c4 = s4i + midPoint - h4;
+  
+  //============================Move Spider===========================
+  servo1.writeMicroseconds(c1);
+  servo2.writeMicroseconds(c2);  
+  servo3.writeMicroseconds(c3);
+  servo4.writeMicroseconds(c4);    
+}
 
 //=================================================================//
 //=============================== RING ============================//
 //=================================================================//
- void ring (){
- 
-    //1 up
-    servo5.writeMicroseconds(s5i + mag);
-    servo6.writeMicroseconds(s6i);  
-    servo7.writeMicroseconds(s7i - mag);
-    servo8.writeMicroseconds(s8i);
-    delay(1000);
-    //1-2 up
-    servo5.writeMicroseconds(s5i + mag);
-    servo6.writeMicroseconds(s6i + mag);  
-    servo7.writeMicroseconds(s7i - mag);
-    servo8.writeMicroseconds(s8i - mag);
-    delay(1000);
-    //2 up
-    servo5.writeMicroseconds(s5i);
-    servo6.writeMicroseconds(s6i + mag);  
-    servo7.writeMicroseconds(s7i);
-    servo8.writeMicroseconds(s8i - mag);
-    delay(1000);
-    //2-3 up
-    servo5.writeMicroseconds(s5i - mag);
-    servo6.writeMicroseconds(s6i + mag);  
-    servo7.writeMicroseconds(s7i + mag);
-    servo8.writeMicroseconds(s8i - mag);
-    delay(1000);
-    //3 up
-    servo5.writeMicroseconds(s5i - mag);
-    servo6.writeMicroseconds(s6i);  
-    servo7.writeMicroseconds(s7i + mag);
-    servo8.writeMicroseconds(s8i);
-    delay(1000);
-    //3-4 up
-    servo5.writeMicroseconds(s5i - mag);
-    servo6.writeMicroseconds(s6i - mag);  
-    servo7.writeMicroseconds(s7i + mag);
-    servo8.writeMicroseconds(s8i + mag);
-   delay(1000); 
-    //4 up
-    servo5.writeMicroseconds(s5i);
-    servo6.writeMicroseconds(s6i - mag);  
-    servo7.writeMicroseconds(s7i);
-    servo8.writeMicroseconds(s8i + mag);
-    delay(1000);
-    //4-1 up
-    servo5.writeMicroseconds(s5i + mag);
-    servo6.writeMicroseconds(s6i - mag);  
-    servo7.writeMicroseconds(s7i - mag);
-    servo8.writeMicroseconds(s8i + mag);
-    delay(1000);
-    //ALL MID
-    servo5.writeMicroseconds(s5i);
-    servo6.writeMicroseconds(s6i);  
-    servo7.writeMicroseconds(s7i);
-    servo8.writeMicroseconds(s8i);   
-    delay(1000);
- }
-  
-void reset() {
-troub1 = 0;
-troub2 = 0;
-troub3 = 0;
-troub4 = 0;
 
-troubXB = 0;
-troubXS = 0;
-troubYB = 0;
-troubYS = 0;
+// void ring (){
+// 
+//    //1 up
+//    servo5.writeMicroseconds(s5i + mag);
+//    servo6.writeMicroseconds(s6i);  
+//    servo7.writeMicroseconds(s7i - mag);
+//    servo8.writeMicroseconds(s8i);
+//    delay(1000);
+//    //1-2 up
+//    servo5.writeMicroseconds(s5i + mag);
+//    servo6.writeMicroseconds(s6i + mag);  
+//    servo7.writeMicroseconds(s7i - mag);
+//    servo8.writeMicroseconds(s8i - mag);
+//    delay(1000);
+//    //2 up
+//    servo5.writeMicroseconds(s5i);
+//    servo6.writeMicroseconds(s6i + mag);  
+//    servo7.writeMicroseconds(s7i);
+//    servo8.writeMicroseconds(s8i - mag);
+//    delay(1000);
+//    //2-3 up
+//    servo5.writeMicroseconds(s5i - mag);
+//    servo6.writeMicroseconds(s6i + mag);  
+//    servo7.writeMicroseconds(s7i + mag);
+//    servo8.writeMicroseconds(s8i - mag);
+//    delay(1000);
+//    //3 up
+//    servo5.writeMicroseconds(s5i - mag);
+//    servo6.writeMicroseconds(s6i);  
+//    servo7.writeMicroseconds(s7i + mag);
+//    servo8.writeMicroseconds(s8i);
+//    delay(1000);
+//    //3-4 up
+//    servo5.writeMicroseconds(s5i - mag);
+//    servo6.writeMicroseconds(s6i - mag);  
+//    servo7.writeMicroseconds(s7i + mag);
+//    servo8.writeMicroseconds(s8i + mag);
+//   delay(1000); 
+//    //4 up
+//    servo5.writeMicroseconds(s5i);
+//    servo6.writeMicroseconds(s6i - mag);  
+//    servo7.writeMicroseconds(s7i);
+//    servo8.writeMicroseconds(s8i + mag);
+//    delay(1000);
+//    //4-1 up
+//    servo5.writeMicroseconds(s5i + mag);
+//    servo6.writeMicroseconds(s6i - mag);  
+//    servo7.writeMicroseconds(s7i - mag);
+//    servo8.writeMicroseconds(s8i + mag);
+//    delay(1000);
+//    //ALL MID
+//    servo5.writeMicroseconds(s5i);
+//    servo6.writeMicroseconds(s6i);  
+//    servo7.writeMicroseconds(s7i);
+//    servo8.writeMicroseconds(s8i);   
+//    delay(1000);
+// }
+//  
+
+//=================================================================//
+//============================ Experiment =========================//
+//=================================================================//
+
+//void brain() {
+//  int randCont = random(1,5);
+//  
+//  //troubleshoot
+//  randCont = 1;
+//  
+//  //set basic attributes for the specific container pickup
+//  if(randCont == 1){
+//    contX = 1100;
+//    contY = 400;
+//    drop = 1100;
+//    dropDelay = 3000;
+//  }
+//  
+//  
+//}  
+//  
+//  
+void paint() {
+  //================
+  //process!!!!!
+  //================
+  
+  //open clamps
+  
+  //raise sponge
+  
+  //semi close clamps
+  
+  //move spider
+  
+  //open clamps
+  
+  //drop sponge || Delay || raise sponge
+  
+  //close clamps
+  
+  //move to mid
 }
+//  
+//  
+//  
   
   
   
@@ -301,17 +431,6 @@ troubYS = 0;
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 
 
 
