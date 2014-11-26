@@ -7,7 +7,8 @@ Serial myPortSend;  // The serial port
 Serial myPortReceive;  // The serial port
 //serial port stuff END
 
-int arduinoMaxDist = 300;
+//keep the sensor distances consistent
+int arduinoMaxDist = 200;
 
 //-------------------------------------------------------------------------------- global variables
 int appSize = 800;
@@ -22,14 +23,14 @@ float rectHalf = rectSize/2;
 //zones
 float outerZone = appSize;
 float goodZone = 150;
-float dangerZone = 15;
+float dangerZone = 25;
 
 //in the boxes
 boolean inBox = false;
 boolean inClear = false;
 
 //array of people coordinates
-int arrayLength = 4;
+int arrayLength = 8;
 int [] ax = new int[arrayLength];
 int [] ay = new int[arrayLength];
 int [] aZone = new int[arrayLength];
@@ -56,7 +57,6 @@ float bufferS = bufferOrigin;
 float bufferE = bufferOrigin;
 float bufferC = bufferOrigin;
 
-
 //person position *Random movement*
 float pMoveX = 0;
 float pMoveY = 0;
@@ -66,6 +66,7 @@ int t1;
 int t2;
 
 //in zones
+int inZone0 = 0;
 int inZone1 = 0;
 int inZone2 = 0;
 int inZone3 = 0;
@@ -75,6 +76,10 @@ float north;
 float south;
 float east;
 float west;
+float NE;
+float SE;
+float SW;
+float NW;
 
 //time
 int time;
@@ -82,6 +87,14 @@ int s;
 int periodLength = 5;
 int remover = -periodLength;
 int current = s;
+
+int pTime = 50;
+int sendTime;
+int sendRemover = -pTime;
+boolean sendTimeOnce = false;
+boolean trigger = false;
+boolean peopleClose = false;
+
 
 //most used zone every 'x' seconds
 boolean timeRunOnce = true;
@@ -91,23 +104,39 @@ int zone2Counter = 0;
 int zone3Counter = 0;
 int mostUsedZone;  //1:danger, 2:good, 3:outer, 0:null
 
-//complex emotion box width
-int ecstatic = 50;
-int enthusiastic = 50;
-int relaxed = 50;
-int nonchalont = 50;
-int dissapointed = 50;
-int defeated = 50;
-int frustrated = 50;
-int irritated = 50;
+//=================Complex emotions (1-8)
+//ecstatic
+//enthusiastic
+//relaxed
+//nonchalont
+//dissapointed
+//defeated
+//frustrated
+//irritated
 
+//number of complex emotions
 int emoNumb = 8;
-
+//positions
 float [] comEmoPosX = new float[emoNumb];
 float [] comEmoPosY = new float[emoNumb];
+//size
 float [] comEmoSizeX = new float[emoNumb];
 float [] comEmoSizeY = new float[emoNumb];
+//emotion enhancement
+float [] emoXPlus = new float[emoNumb];
+float [] emoYPlus = new float[emoNumb];
+//which complex emotion is active
 int activeBox;
+
+//danger zone detection and direction
+boolean danger = false;
+int dangerDirection = 0;
+
+//random coord for paint drop
+int randX;
+int randY;
+
+String curEmo = "none";
 
 float zero = rectCenterX-rectSize/2;
 
@@ -118,8 +147,8 @@ float zero = rectCenterX-rectSize/2;
 void setup() {
   //================================================================= SERIAL PORT STUFF
   // Open the port you are using at the rate you want:
-  myPortReceive = new Serial(this, "/dev/tty.usbmodem1a1331", 115200);
-  myPortSend = new Serial(this, "/dev/tty.usbserial-A601EWK6", 115200);
+  myPortReceive = new Serial(this, "/dev/tty.usbmodem1421", 115200);
+  myPortSend = new Serial(this, "/dev/tty.usbserial-A601EYT9", 115200);
   //myPort.clear();
   myString = myPortReceive.readStringUntil(lf);
   //TO SEND
@@ -135,14 +164,14 @@ void setup() {
   }
   
   //complex emotion points and sizes
-  comEmoPosX[0] = zero;         comEmoPosY[0] = zero+50;     comEmoSizeX[0] = 80;     comEmoSizeY[0] = 150;
-  comEmoPosX[1] = zero+85;      comEmoPosY[1] = zero+60;     comEmoSizeX[1] = 80;     comEmoSizeY[1] = 90;
-  comEmoPosX[2] = zero+220;     comEmoPosY[2] = zero+20;     comEmoSizeX[2] = 120;    comEmoSizeY[2] = 120;
-  comEmoPosX[3] = zero+205;     comEmoPosY[3] = zero+125;    comEmoSizeX[3] = 120;    comEmoSizeY[3] = 30;
-  comEmoPosX[4] = zero+190;     comEmoPosY[4] = zero+190;    comEmoSizeX[4] = 90;     comEmoSizeY[4] = 80;
-  comEmoPosX[5] = zero+170;     comEmoPosY[5] = zero+250;    comEmoSizeX[5] = 140;    comEmoSizeY[5] = 30;
-  comEmoPosX[6] = zero+20;      comEmoPosY[6] = zero+230;    comEmoSizeX[6] = 80;     comEmoSizeY[6] = 100;
-  comEmoPosX[7] = zero+105;     comEmoPosY[7] = zero+160;    comEmoSizeX[7] = 75;    comEmoSizeY[7] = 80;
+  comEmoPosX[0] = zero;         comEmoPosY[0] = zero+50;     comEmoSizeX[0] = 80;     comEmoSizeY[0] = 150;    emoXPlus[0] = -3;    emoYPlus[0] = -3;
+  comEmoPosX[1] = zero+85;      comEmoPosY[1] = zero+60;     comEmoSizeX[1] = 80;     comEmoSizeY[1] = 90;     emoXPlus[1] = -3;    emoYPlus[1] = -1.5;
+  comEmoPosX[2] = zero+220;     comEmoPosY[2] = zero+20;     comEmoSizeX[2] = 120;    comEmoSizeY[2] = 120;    emoXPlus[2] = 1;     emoYPlus[2] = -2;
+  comEmoPosX[3] = zero+205;     comEmoPosY[3] = zero+125;    comEmoSizeX[3] = 120;    comEmoSizeY[3] = 30;     emoXPlus[3] = -1;    emoYPlus[3] = 0;
+  comEmoPosX[4] = zero+190;     comEmoPosY[4] = zero+190;    comEmoSizeX[4] = 90;     comEmoSizeY[4] = 80;     emoXPlus[4] = 0;     emoYPlus[4] = -1.5;
+  comEmoPosX[5] = zero+170;     comEmoPosY[5] = zero+250;    comEmoSizeX[5] = 140;    comEmoSizeY[5] = 30;     emoXPlus[5] = 2;     emoYPlus[5] = -2;
+  comEmoPosX[6] = zero+20;      comEmoPosY[6] = zero+230;    comEmoSizeX[6] = 80;     comEmoSizeY[6] = 100;    emoXPlus[6] = -2;    emoYPlus[6] = 1;
+  comEmoPosX[7] = zero+105;     comEmoPosY[7] = zero+160;    comEmoSizeX[7] = 75;     comEmoSizeY[7] = 80;     emoXPlus[7] = -1.5;  emoYPlus[7] = 1;
 
 }
 
@@ -161,14 +190,19 @@ void draw() {
   timeDisplay();        //display time counters
   
   movePerson();         //people movement logic
-  peopleDisplay();      //people display
+  //peopleDisplay();      //people display
 
   emotionDot();         //emotion point logic
   emotionDisplay();     //emotion point display
-  //bufferDisplay();      //emotion buffer display
+  bufferDisplay();    //emotion buffer display
 
+  sender();
 
-  mostusedZone();
+    //testing random numbers
+//  int randtest = int(150+random(0,1)*550);
+//  int randtest2 = int(100+random(0,1)*500);
+//  println("x: " + randtest + "        " + "y: " + randtest2);
+
 }
 
 
@@ -179,21 +213,61 @@ void draw() {
 void emotionDot () {
 
     peopleInZones();
+    mostUsedZone();
     
     activeBox = 0;
     for(int i = 0 ; i < emoNumb ; i++){
       ifEmoInBox(comEmoPosX[i], comEmoPosY[i], comEmoSizeX[i], comEmoSizeY[i], i+1);
+    } 
+    
+    
+    
+    //-----------------------------------------------------emotion movement logic
+    
+    //major event
+    if(trigger == true){
+      //===================================================== Most Populated Zone
+      //println(mostUsedZone);
+      if(mostUsedZone == 0){
+        //move to center if nothing is happening
+        if(posX > rectCenterX+3){moveX += -5;}
+        if(posX < rectCenterX+3){moveX += 5;}
+        if(posY > rectCenterY+3){moveY += -5;}
+        if(posY < rectCenterY+3){moveY += 5;}    
+      }      
+      //3 boundries
+      if(mostUsedZone == 1){moveX += -5; moveY += -4;}
+      if(mostUsedZone == 2){moveX += 2;  moveY += -5;}
+      if(mostUsedZone == 3){moveX += 4; moveY += 7;}
+      //two+ equal
+      if(mostUsedZone == 4){moveX -= 0.2; moveY += 0.3;}
+      //===================================================== Current Complex Zone
+      for(int i = 0 ; i < emoNumb ; i++){
+        if(activeBox == i){
+          posX = posX + emoXPlus[i];
+          posY = posY + emoYPlus[i];
+        }
+      }
+      
+      
     }
     
-    //-----------------------------------------------------movement logic
-    //if more people in good than outer
-    if(inZone1 > 0){
-      moveX -= 0.5;
-      moveY -= 0.5;
-     } else {
-      moveX += 0.5;
-      moveY += 0.5;
-     }
+    //constant update
+    if(inZone1 > 0){moveX += -0.08; moveY += -0.05;}
+    if(inZone2 > 0){moveX += 0.05; moveY += -0.05;}
+    if(inZone3 > 0){
+      moveX -= 0.05; 
+      if(posX > rectCenterY) {moveY += -0.3;}
+      if(posX < rectCenterY) {moveY += 0.5;}
+    }
+    if(inZone0 == 8){
+      //move to center if nothing is happening
+      if(posX > rectCenterX){moveX += -0.06;}
+      if(posX < rectCenterX){moveX += 0.06;}
+      if(posY > rectCenterY){moveY += -0.06;}
+      if(posY < rectCenterY){moveY += 0.06;}    
+    
+    }
     
     
 
@@ -246,10 +320,18 @@ void emotionDot () {
       if(posX >= (boxX-(distX/2)) && posX <= (boxX+(distX/2)) && posY >= (boxY-(distY/2)) && posY <= (boxY+(distY/2))){
           activeBox = within;
       }
-    println(activeBox);
+      
+      //set variable to be the name of the current complex emotion
+      if(activeBox == 1){curEmo = "ecstatic";}
+      if(activeBox == 2){curEmo = "enthusiastic";}
+      if(activeBox == 3){curEmo = "relaxed";}
+      if(activeBox == 4){curEmo = "nonchalont";}
+      if(activeBox == 5){curEmo = "dissapointed";}
+      if(activeBox == 6){curEmo = "defeated";}
+      if(activeBox == 7){curEmo = "frustrated";}
+      if(activeBox == 8){curEmo = "irritated";}
+      
     }
-
-
 
 //=================================================================//
 //============================= PEOPLE ============================//
@@ -262,6 +344,10 @@ void movePerson() {
     east = map(movement[1], 0, arduinoMaxDist, 0, halfApp);
     south = map(movement[2], 0, arduinoMaxDist, 0, halfApp);   
     west = map(movement[3], 0, arduinoMaxDist, 0, halfApp);  
+    NE = map(movement[4], 0, arduinoMaxDist, 0, halfApp);
+    SE = map(movement[5], 0, arduinoMaxDist, 0, halfApp);
+    SW = map(movement[6], 0, arduinoMaxDist, 0, halfApp);
+    NW = map(movement[7], 0, arduinoMaxDist, 0, halfApp);
 
     //north values
     ay[0] = int(halfApp - north);
@@ -274,7 +360,20 @@ void movePerson() {
     ax[2] = halfApp;    
     //west values
     ax[3] = int(halfApp - west);
-    ay[3] = halfApp;       
+    ay[3] = halfApp;  
+    //NE values
+    ax[4] = int(halfApp + (NE));
+    ay[4] = int(halfApp - (NE));   
+    //SE
+    ax[5] = int(halfApp + (SE));
+    ay[5] = int(halfApp + (SE));
+    //SW
+    ax[6] = int(halfApp - SW);
+    ay[6] = int(halfApp + SW);
+    //NW 
+    ax[7] = int(halfApp - NW);
+    ay[7] = int(halfApp - NW);
+    
 }
 
 
@@ -291,27 +390,45 @@ void movePerson() {
           //if within danger zone
       if((  ax[i] > (rectCenterX - rectHalf - dangerZone)  ) &&  (  ax[i] < (rectCenterX + rectHalf + dangerZone)  )       &&      (  ay[i] > (rectCenterY - rectHalf - dangerZone)  ) &&  (  ay[i] < (rectCenterY + rectHalf + dangerZone)  )) {personZone[i] = 1;} 
         
-      //set zone 0 to be no detection by sensor   
-      if(north == 0) {personZone[0] = 0;}  if(east == 0) {personZone[1] = 0;}  if(south == 0) {personZone[2] = 0;}  if(west == 0) {personZone[3] = 0;}
+      //set zone 0 to be no detection by sensor   (value less than 10 for corner)
+      if(north <= 10) {personZone[0] = 0;}
+      if(east <= 10) {personZone[1] = 0;} 
+      if(south <= 10) {personZone[2] = 0;}  
+      if(west <= 10) {personZone[3] = 0;}
+      
+      if(NE <= 10) {personZone[4] = 0;}
+      if(SE <= 10) {personZone[5] = 0;} 
+      if(SW <= 10) {personZone[6] = 0;}  
+      if(NW <= 10) {personZone[7] = 0;}
  
   }
     
     //-------------------------------------------------------------------------------- Count the number of people in zones
     void peopleInZones() {
       //reset number of people in zones
-      inZone1 = 0;  inZone2 = 0;  inZone3 = 0;
+      inZone0 = 0; inZone1 = 0;  inZone2 = 0;  inZone3 = 0;
+      
+      //reset danger
+      dangerDirection = 0;
+      danger = false;
       
       for(int i = 0 ; i < arrayLength ; i++){
-        checkZone(i);
+          checkZone(i);
         //count number of people in Zones
-        if(personZone[i] == 1) {inZone1++;}
+        if(personZone[i] == 1) {inZone1++; dangerDirection=i; danger=true;}
         if(personZone[i] == 2) {inZone2++;}
         if(personZone[i] == 3) {inZone3++;}
-        
+        if(personZone[i] == 0) {inZone0++;}
       }
+      
+//      println("in no Zone: " + inZone0);
+//      println("in Zone 1: " + inZone1);
+//      println("in Zone 2: " + inZone2);
+//      println("in Zone 3: " + inZone3);
+//      println(" "); 
     }
     //-------------------------------------------------------------------------------- find most populated zone for every 'x' seconds
-    void mostusedZone() {
+    void mostUsedZone() {
       //run once at 0 seconds
       if(current == 0 && timeRunOnce == true){
         zone1Counter = 0;        zone2Counter = 0;        zone3Counter = 0;
@@ -338,24 +455,15 @@ void movePerson() {
         //any detection lasting under 'x' time is not recognised
         if(a <= periodBuffer) {mostUsedZone=0;}
         //if multiple most used
-        println(zone1Counter);
-        println(zone2Counter);
-        println(zone3Counter);
-        println(" ");
         if(zone1Counter + zone2Counter >= 600 || zone1Counter + zone3Counter >= 600 || zone2Counter + zone3Counter >= 600){
-          println("rekt");
+            mostUsedZone=4;//IF 2+ ZONES ARE EQUAL
         }
-        
-        
         timeRunOnce = true;
-        
-        //println(mostUsedZone);
       }
       
       
     }
    
-    
 
 //=================================================================//
 //============================ DISPLAY ============================//
@@ -452,8 +560,14 @@ void peopleDisplay() {
 }
 //-------------------------------------------------------------------------------- DISPLAY TIME
 void timeDisplay() {
-  text (s, 20, 20);  
-  text (current, 20, 40);  
+//  text (s, 20, 20);  
+//  text (current, 20, 40);  
+//  text (sendTime, 20, 60);
+//  text("people close: " + peopleClose, 20, 80);
+//  text("danger: " + danger, 20, 100);
+//  text("direction: " + dangerDirection, 20, 120);
+//  text(activeBox,20,140);
+    text(curEmo, 20, 20);
 }
 
 //=================================================================//
@@ -465,11 +579,30 @@ void timeCount() {
   //start counter
   time = millis();
   s = time/1000;
-  //time of 0 to periodLength (resetting at end)
+  
+  //time of 0 to periodLength (resetting at end) major event signal
   current = s - remover;
   if (current == periodLength){
     remover = remover += periodLength;
+    trigger = true;
+  } else {trigger = false;}
+  
+  //time of sender (0 to pTime)  paint signal
+  sendTime = s - sendRemover;
+  if(sendTime == pTime){
+    sendTimeOnce = true;
+    sendRemover = sendRemover += pTime;
   }
+  
+  //find if anyone was close to the robot before paint time
+  if(sendTime > (2*pTime/3) && inZone0 < 8){
+    peopleClose = true;
+  }
+  //reset detection of close people   
+  if(sendTime == pTime/2){
+     peopleClose = false;
+  }
+  
 }
 
 
@@ -481,12 +614,49 @@ void serialEvent(Serial myPortReceive) {
   myString = myPortReceive.readStringUntil(lf);
   if (myString != null) {
     myString = trim(myString);
-    int[] distances = int(split(myString, " "));
+    int[] distances = int(split(myString, " ")); 
+    //laptop block direction removal
+    distances[2] = 0;
     for (int i = 0 ; i < arrayLength ; i++){
       movement[i] = distances[i];
     }    
-     //println(distances);
+     //println(movement);
   }
+}
+
+void sender() {
+   if(sendTime == 0 && sendTimeOnce == true){
+     //determine active box
+     println(activeBox);
+     myPortSend.write(activeBox+1);     
+     //only paint if people are close
+     if(peopleClose == true){ 
+       println("1");
+       myPortSend.write(1);
+     }
+     sendTimeOnce = false;
+    } else {
+      //filler
+      myPortSend.write(activeBox+1);
+    }
+    //if danger is detected
+    if(danger == true){
+      //println(30 + dangerDirection);
+      myPortSend.write(30 + dangerDirection);
+      } else {
+        //filler
+        myPortSend.write(0);
+      }
+}
+
+int clik = 2;
+
+void mouseClicked(){
+      //int cycle = 2+ int(random(4));
+      println("click"+clik);
+      myPortSend.write(clik);
+      myPortSend.write(1);
+      clik++;
 }
 
 //=================================================================//

@@ -1,7 +1,12 @@
+#include <SoftwareSerial.h>
+
 
 //=======================================================//
 //======================== SERVO ========================//
 //=======================================================// 
+
+int inByte;
+int byteEmo;
 
 float troub1 = 0;
 float troub2 = 0;
@@ -42,7 +47,7 @@ int microDev;
 int mid;
 int spiderUp;
 int frameMid;
-int mag;
+int tilt;
 int circSeg;
 
 int s1i;
@@ -71,14 +76,21 @@ float moveY;
 int h1; int h2; int h3; int h4;
 int c1; int c2; int c3; int c4; 
 
-int zTop = 1860;
+int zTop = 1900;  //1920 for top
 int zBot = 1100;
 int dropDelay;
 
 int spiderHei = 80;
 
+int dangerDirection = 0;
 
+int randX; float randXtemp;
+int randY; float randYtemp;
 
+int cont1X = 1050; int cont1Y = 400; int cont1D = 2650;
+int cont2X = 1100; int cont2Y = 800; int cont2D = 2000;
+int cont3X = 850; int cont3Y = 400;  int cont3D = 1500;
+int cont4X = 900; int cont4Y = 200;  int cont4D = 2200;
 
 //=================================================================//
 //============================== SETUP ============================//
@@ -86,7 +98,7 @@ int spiderHei = 80;
 
 void setup()
 {
-  Serial.begin(300);
+  Serial.begin(115200);
 
   
   //============================ SERVO
@@ -106,12 +118,12 @@ void setup()
   servoM2.attach(8);  
   servoS.attach(2, 1000, 2000);  
  
-    
+  //define basic variables
   mid = 1500;
   spiderUp = mid + -spiderHei;
   //ring variables
   frameMid = 1600;
-  mag = 250;
+  tilt = 250;
   circSeg = 1000;
   
   //spider dimens
@@ -131,7 +143,7 @@ void setup()
 //  moveY = 700;
 //  moveSpider(moveX, moveY);
   
-  paint(4);
+  //paint(4, 400, 400);
   //ring(2700);
 
 
@@ -143,6 +155,14 @@ void setup()
 
 void loop()
 {
+  //serial read
+  while(Serial.available()){
+    inByte = Serial.read();
+  }    
+  //decision function
+  brain();  
+    
+    
  //ring();
  //microTest();
  //sexBot();
@@ -154,122 +174,100 @@ void loop()
 //=================================================================//
 //========================= SMALL FUNCTIONS =======================//
 //=================================================================//
+void brain(){
 
+  //set the emotion
+  if(inByte == 2){byteEmo = 1;}
+  if(inByte == 3){byteEmo = 2;}
+  if(inByte == 4){byteEmo = 3;}
+  if(inByte == 5){byteEmo = 4;}
+  if(inByte == 6){byteEmo = 5;}
+  if(inByte == 7){byteEmo = 6;}
+  if(inByte == 8){byteEmo = 7;}
+  if(inByte == 9){byteEmo = 8;}  
+  
+  //love detected
+  if(inByte==30){north(tilt);}
+  if(inByte==31){east(tilt);}
+  if(inByte==32){south(tilt);}
+  if(inByte==33){west(tilt);}
+  
+  if(inByte==34){SouthW(-tilt);}
+  if(inByte==35){NorthW(-tilt);}
+  if(inByte==36){NorthE(-tilt);}
+  if(inByte==37){SouthE(-tilt);}
+  
+  
+  //run paint function
+  if(inByte == 1){
+      int cordX = int(random(150,700));
+      int cordY = int(random(100,600));
+      paint(byteEmo);
+  }
+    
+}
 
 void paint(int b) {
 
-  
-  if(b == 1){
-    //move over container
-    moveX = 1000;
-    moveY = 400;
-    moveSpider(moveX, moveY);
-    delay(3000); 
-    //drop/raise sponge
-    spongeToCont(2650);
-    delay(3000);
-    //move to mid
-    moveX = 550;
-    moveY = 400;
-    spiderUp = mid + spiderHei;
-    moveSpider(moveX, moveY);
-    delay(3000);
-    //move to drop location
-    moveX = 600;
-    moveY = 700;
-    spiderUp = mid + spiderHei;
-    moveSpider(moveX, moveY);
-    delay(2000);
-    //clamp
-    clamp(1500);
-    ring(1500);
-    //run setup
-    spiderUp = mid + spiderHei;
-    startUp();    
-  }  
-  
-  if(b == 2){
-    //move over container
-    moveX = 1100;
-    moveY = 800;
-    moveSpider(moveX, moveY);
-    delay(3000); 
-    //drop/raise sponge
-    spongeToCont(2300);
-    delay(3000);
-    //move to mid
-    moveX = 550;
-    moveY = 400;
-    spiderUp = mid + spiderHei;
-    moveSpider(moveX, moveY);
-    delay(4000);
-    //move to drop location
-    moveX = 200;
-    moveY = 700;
-    spiderUp = mid + spiderHei;
-    moveSpider(moveX, moveY);
-    delay(2000);
-    //clamp
-    clamp(1500);
-    ring(1500);
-    //run setup
-    spiderUp = mid + spiderHei;
-    startUp();    
-  }  
-  
-  if(b == 3){
-    //move over container
-    moveX = 850;
-    moveY = 400;
-    moveSpider(moveX, moveY);
-    delay(3000); 
-    //drop/raise sponge
-    spongeToCont(1850);
-    //move to mid
-    moveX = 550;
-    moveY = 400;
-    moveSpider(moveX, moveY);
-    delay(3000);
-    //move to drop location
-    moveX = 550;
-    moveY = 400;
-    moveSpider(moveX, moveY);
-    delay(2000);
-    //clamp
-    clamp(1500);
-    ring(1500);
-    //run setup
-    startUp();
-  }
-
-  if(b == 4){
-    //move over container
-    moveX = 900;
-    moveY = 200;
-    moveSpider(moveX, moveY);
-    delay(3000); 
-    //drop/raise sponge
-    spongeToCont(2250);
-    //move to mid
-    moveX = 550;
-    moveY = 400;
-    moveSpider(moveX, moveY);
-    delay(3000);
-    //move to drop location
-    moveX = 150;
-    moveY = 100;
-    moveSpider(moveX, moveY);
-    delay(2000);
-    //clamp
-    clamp(1500);
-    ring(1500);
-    //run setup
-    startUp();
-  }  
+    if(b == 1){cycle(cont2X, cont2Y, cont2D, 0);ring(1500);}
+    if(b == 2){cycle(cont2X, cont2Y, cont2D, 20);}
+    if(b == 3){cycle(cont3X, cont3Y, cont3D, 30);}
+    if(b == 4){cycle(cont1X, cont1Y, cont1D, 0);}
+    
+    if(b == 5){cycle(cont3X, cont3Y, cont3D, 20);}
+    if(b == 6){cycle(cont4X, cont4Y, cont3D, 0);}
+    if(b == 7){cycle(cont4X, cont4Y, cont4D, 20);}
+    if(b == 8){cycle(cont1X, cont1Y, cont4D, 0);}    
   
 }
 
+void cycle(int x, int y, int d, int dPlus){
+    //move over container
+    moveToCont(x, y);
+    delay(3000); 
+    //drop/raise sponge
+    spongeToCont(d + dPlus);
+    delay(3000);
+    //move to mid
+    moveToMid();
+    delay(3000);
+    //move to drop location 
+//    randXtemp = 150+(random(1)*550);
+//    randYtemp = 100+(random(1)*500);
+//    randX = int(randXtemp);
+//    randY = int(randYtemp);
+    randX = 50-(random(100,650));
+    randY = random(120,900);
+    moveToDrop(randX, randY);
+    delay(4000);
+    //clamp
+    clamp(1000);
+    //ring(1500);
+    //run setup
+    spiderUp = mid + spiderHei;
+    startUp();  
+}
 
+void moveToCont(int x, int y){
+  moveX = x;
+  moveY = y;
+  moveSpider(moveX, moveY);
+}
+
+void moveToMid(){
+    moveX = 550;
+    moveY = 400;
+    spiderUp = mid + spiderHei;
+    moveSpider(moveX, moveY);
+}
+
+void moveToDrop(int dropX, int dropY){
+
+  moveX = dropX;
+  moveY = dropY;
+  spiderUp = mid + spiderHei;
+  moveSpider(moveX, moveY);
+}
 
 void startUp() {
   spiderUp = mid + spiderHei;  
@@ -415,67 +413,48 @@ void moveSpider(int x,int y) {
 
  void ring (int d){
  
-    //1 up
-    servo5.writeMicroseconds(frameMid + mag);
-    servo6.writeMicroseconds(frameMid);  
-    servo7.writeMicroseconds(frameMid - mag);
-    servo8.writeMicroseconds(frameMid);
+    //1
+    SouthE(-tilt);
     clamp(700);
     delay(d);
-    //1-2 up
-    servo5.writeMicroseconds(frameMid + mag);
-    servo6.writeMicroseconds(frameMid + mag);  
-    servo7.writeMicroseconds(frameMid - mag);
-    servo8.writeMicroseconds(frameMid - mag);
+    
+    //2
+    east(-tilt);
     clamp(700);
     delay(d);
-    //2 up
-    servo5.writeMicroseconds(frameMid);
-    servo6.writeMicroseconds(frameMid + mag);  
-    servo7.writeMicroseconds(frameMid);
-    servo8.writeMicroseconds(frameMid - mag);
+    
+    //3
+    NorthE(-tilt);
     clamp(700);
     delay(d);
-    //2-3 up
-    servo5.writeMicroseconds(frameMid - mag);
-    servo6.writeMicroseconds(frameMid + mag);  
-    servo7.writeMicroseconds(frameMid + mag);
-    servo8.writeMicroseconds(frameMid - mag);
+    
+    //4
+    north(-tilt);
     clamp(700);
     delay(d);
+    
     //3 up
-    servo5.writeMicroseconds(frameMid - mag);
-    servo6.writeMicroseconds(frameMid);  
-    servo7.writeMicroseconds(frameMid + mag);
-    servo8.writeMicroseconds(frameMid);
+    NorthW(-tilt);
     clamp(700);
     delay(d);
-    //3-4 up
-    servo5.writeMicroseconds(frameMid - mag);
-    servo6.writeMicroseconds(frameMid - mag);  
-    servo7.writeMicroseconds(frameMid + mag);
-    servo8.writeMicroseconds(frameMid + mag);
+    
+    //6
+    west(-tilt);
     clamp(700);
-   delay(d); 
+    delay(d); 
+   
     //4 up
-    servo5.writeMicroseconds(frameMid);
-    servo6.writeMicroseconds(frameMid - mag);  
-    servo7.writeMicroseconds(frameMid);
-    servo8.writeMicroseconds(frameMid + mag);
+    SouthW(-tilt);
     clamp(700);
     delay(d);
-    //4-1 up
-    servo5.writeMicroseconds(frameMid + mag);
-    servo6.writeMicroseconds(frameMid - mag);  
-    servo7.writeMicroseconds(frameMid - mag);
-    servo8.writeMicroseconds(frameMid + mag);
+    
+    //7
+    south(-tilt);
     clamp(700);
     delay(d);
-    //ALL MID
-    servo5.writeMicroseconds(frameMid);
-    servo6.writeMicroseconds(frameMid);  
-    servo7.writeMicroseconds(frameMid);
-    servo8.writeMicroseconds(frameMid);   
+    
+    //8
+    midFrame();
     clamp(700);
     delay(d);
  }
@@ -485,50 +464,69 @@ void moveSpider(int x,int y) {
 //============================ Experiment =========================//
 //=================================================================//
 
-//void brain() {
-//  int randCont = random(1,5);
-//  
-//  //troubleshoot
-//  randCont = 1;
-//  
-//  //set basic attributes for the specific container pickup
-//  if(randCont == 1){
-//    contX = 1100;
-//    contY = 400;
-//    drop = 1100;
-//    dropDelay = 3000;
-//  }
-//  
-//  
-//}  
-//  
-//  
-void paint() {
-  //================
-  //process!!!!!
-  //================
+  void midFrame(){
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid);   
+  }
+
+  //=================================================== Square 0-3
+  void north(int mag) {
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid - mag);
+  }
   
-  //open clamps
+  void east(int mag) {
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid - mag);
+  }  
   
-  //raise sponge
+  void south(int mag) {
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid + mag);
+  }
   
-  //semi close clamps
+  void west(int mag) {
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid + mag);
+  }
+  //=================================================== Diagonal 4-7
+  void NorthE(int mag) {
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid + mag);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid - mag);
+  }
   
-  //move spider
+  void SouthE(int mag) {
+    servo5.writeMicroseconds(frameMid + mag);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid - mag);
+    servo8.writeMicroseconds(frameMid);
+  }
   
-  //open clamps
+  void SouthW(int mag) {
+    servo5.writeMicroseconds(frameMid);
+    servo6.writeMicroseconds(frameMid - mag);  
+    servo7.writeMicroseconds(frameMid);
+    servo8.writeMicroseconds(frameMid + mag);
+  }  
   
-  //drop sponge || Delay || raise sponge
-  
-  //close clamps
-  
-  //move to mid
-}
-//  
-//  
-//  
-  
-  
+  void NorthW(int mag) {
+    servo5.writeMicroseconds(frameMid - mag);
+    servo6.writeMicroseconds(frameMid);  
+    servo7.writeMicroseconds(frameMid + mag);
+    servo8.writeMicroseconds(frameMid);
+  }  
   
   
   

@@ -7,29 +7,31 @@
 //=======================================================// 
 #include <NewPing.h>
 
-#define SONAR_NUM     4 // Number or sensors.
-#define MAX_DISTANCE 300 // Maximum distance (in cm) to ping.
-#define PING_INTERVAL 50 // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
+#define SONAR_NUM     8 // Number or sensors.
+#define MAX_DISTANCE 200 // Maximum distance (in cm) to ping.
+#define PING_INTERVAL 30 // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
 
 unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen for each sensor.
 unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
 uint8_t currentSensor = 0;          // Keeps track of which sensor is active.
 
 NewPing sonar[SONAR_NUM] = {     // Sensor object array.
-  NewPing(30, 5, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping.
-  NewPing(29, 4, MAX_DISTANCE),
+  //square
+  NewPing(31, 6, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping.
   NewPing(28, 3, MAX_DISTANCE),
-  NewPing(27, 2, MAX_DISTANCE),
+  NewPing(29, 4, MAX_DISTANCE),
+  NewPing(30, 5, MAX_DISTANCE),
+  //diagonal
+  NewPing(40, 8, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping.
+  NewPing(41, 9, MAX_DISTANCE),
+  NewPing(42, 10, MAX_DISTANCE),
+  NewPing(43, 11, MAX_DISTANCE),  
+
 };
 
 char incomeVal;
 
 float sensorValue = 0;
-
-//=======================================================//
-//======================== SERVO ========================//
-//=======================================================// 
-
 
 //=================================================================//
 //============================== SETUP ============================//
@@ -57,9 +59,9 @@ void loop()
 
   
   pinging();
-  while(Serial.available() >0){
-    Serial.write(Serial.read());
-  }  
+//  while(Serial.available() >0){
+//    Serial.write(Serial.read());
+//  }  
 
   
 
